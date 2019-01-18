@@ -16,10 +16,8 @@ from chromewhip.protocol import debugger as Debugger
 from chromewhip.protocol import dom as DOM
 from chromewhip.protocol import network as Network
 from chromewhip.protocol import runtime as Runtime
+from chromewhip.protocol import runtime as Runtime
 from chromewhip.protocol import emulation as Emulation
-
-# ResourceType: Resource type as it was perceived by the rendering engine.
-ResourceType = str
 
 # FrameId: Unique frame identifier.
 FrameId = str
@@ -51,7 +49,7 @@ class Frame(ChromeTypeBase):
 class FrameResource(ChromeTypeBase):
     def __init__(self,
                  url: Union['str'],
-                 type: Union['ResourceType'],
+                 type: Union['Network.ResourceType'],
                  mimeType: Union['str'],
                  lastModified: Optional['Network.TimeSinceEpoch'] = None,
                  contentSize: Optional['float'] = None,
@@ -207,6 +205,38 @@ class Viewport(ChromeTypeBase):
         self.scale = scale
 
 
+# FontFamilies: Generic font families collection.
+class FontFamilies(ChromeTypeBase):
+    def __init__(self,
+                 standard: Optional['str'] = None,
+                 fixed: Optional['str'] = None,
+                 serif: Optional['str'] = None,
+                 sansSerif: Optional['str'] = None,
+                 cursive: Optional['str'] = None,
+                 fantasy: Optional['str'] = None,
+                 pictograph: Optional['str'] = None,
+                 ):
+
+        self.standard = standard
+        self.fixed = fixed
+        self.serif = serif
+        self.sansSerif = sansSerif
+        self.cursive = cursive
+        self.fantasy = fantasy
+        self.pictograph = pictograph
+
+
+# FontSizes: Default font sizes.
+class FontSizes(ChromeTypeBase):
+    def __init__(self,
+                 standard: Optional['int'] = None,
+                 fixed: Optional['int'] = None,
+                 ):
+
+        self.standard = standard
+        self.fixed = fixed
+
+
 class Page(PayloadMixin):
     """ Actions and events related to the inspected page belong to the page domain.
     """
@@ -233,14 +263,20 @@ class Page(PayloadMixin):
     @classmethod
     def addScriptToEvaluateOnNewDocument(cls,
                                          source: Union['str'],
+                                         worldName: Optional['str'] = None,
                                          ):
         """Evaluates given script in every frame upon creation (before loading frame's scripts).
         :param source: 
         :type source: str
+        :param worldName: If specified, creates an isolated world with the given name and evaluates given script in it.
+This world name will be used as the ExecutionContextDescription::name when the corresponding
+event is emitted.
+        :type worldName: str
         """
         return (
             cls.build_send_payload("addScriptToEvaluateOnNewDocument", {
                 "source": source,
+                "worldName": worldName,
             }),
             cls.convert_payload({
                 "identifier": {
@@ -283,6 +319,27 @@ class Page(PayloadMixin):
                 "quality": quality,
                 "clip": clip,
                 "fromSurface": fromSurface,
+            }),
+            cls.convert_payload({
+                "data": {
+                    "class": str,
+                    "optional": False
+                },
+            })
+        )
+
+    @classmethod
+    def captureSnapshot(cls,
+                        format: Optional['str'] = None,
+                        ):
+        """Returns a snapshot of the page as a string. For MHTML format, the serialization includes
+iframes, shadow DOM, external resources, and element-inline styles.
+        :param format: Format (defaults to mhtml).
+        :type format: str
+        """
+        return (
+            cls.build_send_payload("captureSnapshot", {
+                "format": format,
             }),
             cls.convert_payload({
                 "data": {
@@ -918,6 +975,36 @@ autosizing and more.
         )
 
     @classmethod
+    def setFontFamilies(cls,
+                        fontFamilies: Union['FontFamilies'],
+                        ):
+        """Set generic font families.
+        :param fontFamilies: Specifies font families to set. If a font family is not specified, it won't be changed.
+        :type fontFamilies: FontFamilies
+        """
+        return (
+            cls.build_send_payload("setFontFamilies", {
+                "fontFamilies": fontFamilies,
+            }),
+            None
+        )
+
+    @classmethod
+    def setFontSizes(cls,
+                     fontSizes: Union['FontSizes'],
+                     ):
+        """Set default font sizes.
+        :param fontSizes: Specifies font sizes to set. If a font size is not specified, it won't be changed.
+        :type fontSizes: FontSizes
+        """
+        return (
+            cls.build_send_payload("setFontSizes", {
+                "fontSizes": fontSizes,
+            }),
+            None
+        )
+
+    @classmethod
     def setDocumentContent(cls,
                            frameId: Union['FrameId'],
                            html: Union['str'],
@@ -1098,6 +1185,70 @@ https://github.com/WICG/web-lifecycle/
         """
         return (
             cls.build_send_payload("stopScreencast", {
+            }),
+            None
+        )
+
+    @classmethod
+    def setProduceCompilationCache(cls,
+                                   enabled: Union['bool'],
+                                   ):
+        """Forces compilation cache to be generated for every subresource script.
+        :param enabled: 
+        :type enabled: bool
+        """
+        return (
+            cls.build_send_payload("setProduceCompilationCache", {
+                "enabled": enabled,
+            }),
+            None
+        )
+
+    @classmethod
+    def addCompilationCache(cls,
+                            url: Union['str'],
+                            data: Union['str'],
+                            ):
+        """Seeds compilation cache for given url. Compilation cache does not survive
+cross-process navigation.
+        :param url: 
+        :type url: str
+        :param data: Base64-encoded data
+        :type data: str
+        """
+        return (
+            cls.build_send_payload("addCompilationCache", {
+                "url": url,
+                "data": data,
+            }),
+            None
+        )
+
+    @classmethod
+    def clearCompilationCache(cls):
+        """Clears seeded compilation cache.
+        """
+        return (
+            cls.build_send_payload("clearCompilationCache", {
+            }),
+            None
+        )
+
+    @classmethod
+    def generateTestReport(cls,
+                           message: Union['str'],
+                           group: Optional['str'] = None,
+                           ):
+        """Generates a report for testing.
+        :param message: Message to be displayed in the report.
+        :type message: str
+        :param group: Specifies the endpoint group to deliver the report to.
+        :type group: str
+        """
+        return (
+            cls.build_send_payload("generateTestReport", {
+                "message": message,
+                "group": group,
             }),
             None
         )
@@ -1404,7 +1555,7 @@ class JavascriptDialogOpeningEvent(BaseEvent):
 class LifecycleEventEvent(BaseEvent):
 
     js_name = 'Page.lifecycleEvent'
-    hashable = ['loaderId', 'frameId']
+    hashable = ['frameId', 'loaderId']
     is_hashable = True
 
     def __init__(self,
@@ -1427,7 +1578,7 @@ class LifecycleEventEvent(BaseEvent):
         self.timestamp = timestamp
 
     @classmethod
-    def build_hash(cls, loaderId, frameId):
+    def build_hash(cls, frameId, loaderId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -1554,6 +1705,28 @@ class WindowOpenEvent(BaseEvent):
         if isinstance(userGesture, dict):
             userGesture = bool(**userGesture)
         self.userGesture = userGesture
+
+    @classmethod
+    def build_hash(cls):
+        raise ValueError('Unable to build hash for non-hashable type')
+
+
+class CompilationCacheProducedEvent(BaseEvent):
+
+    js_name = 'Page.compilationCacheProduced'
+    hashable = []
+    is_hashable = False
+
+    def __init__(self,
+                 url: Union['str', dict],
+                 data: Union['str', dict],
+                 ):
+        if isinstance(url, dict):
+            url = str(**url)
+        self.url = url
+        if isinstance(data, dict):
+            data = str(**data)
+        self.data = data
 
     @classmethod
     def build_hash(cls):

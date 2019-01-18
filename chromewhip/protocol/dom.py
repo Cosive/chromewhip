@@ -375,6 +375,35 @@ be called for that search.
         )
 
     @classmethod
+    def getContentQuads(cls,
+                        nodeId: Optional['NodeId'] = None,
+                        backendNodeId: Optional['BackendNodeId'] = None,
+                        objectId: Optional['Runtime.RemoteObjectId'] = None,
+                        ):
+        """Returns quads that describe node position on the page. This method
+might return multiple quads for inline nodes.
+        :param nodeId: Identifier of the node.
+        :type nodeId: NodeId
+        :param backendNodeId: Identifier of the backend node.
+        :type backendNodeId: BackendNodeId
+        :param objectId: JavaScript object id of the node wrapper.
+        :type objectId: Runtime.RemoteObjectId
+        """
+        return (
+            cls.build_send_payload("getContentQuads", {
+                "nodeId": nodeId,
+                "backendNodeId": backendNodeId,
+                "objectId": objectId,
+            }),
+            cls.convert_payload({
+                "quads": {
+                    "class": [Quad],
+                    "optional": False
+                },
+            })
+        )
+
+    @classmethod
     def getDocument(cls,
                     depth: Optional['int'] = None,
                     pierce: Optional['bool'] = None,
@@ -432,7 +461,8 @@ entire subtree or provide an integer larger than 0.
                            y: Union['int'],
                            includeUserAgentShadowDOM: Optional['bool'] = None,
                            ):
-        """Returns node id at given location.
+        """Returns node id at given location. Depending on whether DOM domain is enabled, nodeId is
+either returned or not.
         :param x: X coordinate.
         :type x: int
         :param y: Y coordinate.
@@ -447,9 +477,13 @@ entire subtree or provide an integer larger than 0.
                 "includeUserAgentShadowDOM": includeUserAgentShadowDOM,
             }),
             cls.convert_payload({
+                "backendNodeId": {
+                    "class": BackendNodeId,
+                    "optional": False
+                },
                 "nodeId": {
                     "class": NodeId,
-                    "optional": False
+                    "optional": True
                 },
             })
         )
@@ -1014,9 +1048,13 @@ $x functions).
                 "frameId": frameId,
             }),
             cls.convert_payload({
+                "backendNodeId": {
+                    "class": BackendNodeId,
+                    "optional": False
+                },
                 "nodeId": {
                     "class": NodeId,
-                    "optional": False
+                    "optional": True
                 },
             })
         )
@@ -1287,7 +1325,7 @@ class PseudoElementAddedEvent(BaseEvent):
 class PseudoElementRemovedEvent(BaseEvent):
 
     js_name = 'Dom.pseudoElementRemoved'
-    hashable = ['parentId', 'pseudoElementId']
+    hashable = ['pseudoElementId', 'parentId']
     is_hashable = True
 
     def __init__(self,
@@ -1302,7 +1340,7 @@ class PseudoElementRemovedEvent(BaseEvent):
         self.pseudoElementId = pseudoElementId
 
     @classmethod
-    def build_hash(cls, parentId, pseudoElementId):
+    def build_hash(cls, pseudoElementId, parentId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

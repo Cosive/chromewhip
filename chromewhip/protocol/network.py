@@ -17,6 +17,9 @@ from chromewhip.protocol import runtime as Runtime
 from chromewhip.protocol import security as Security
 from chromewhip.protocol import page as Page
 
+# ResourceType: Resource type as it was perceived by the rendering engine.
+ResourceType = str
+
 # LoaderId: Unique loader identifier.
 LoaderId = str
 
@@ -94,6 +97,7 @@ class Request(ChromeTypeBase):
                  headers: Union['Headers'],
                  initialPriority: Union['ResourcePriority'],
                  referrerPolicy: Union['str'],
+                 urlFragment: Optional['str'] = None,
                  postData: Optional['str'] = None,
                  hasPostData: Optional['bool'] = None,
                  mixedContentType: Optional['Security.MixedContentType'] = None,
@@ -101,6 +105,7 @@ class Request(ChromeTypeBase):
                  ):
 
         self.url = url
+        self.urlFragment = urlFragment
         self.method = method
         self.headers = headers
         self.postData = postData
@@ -246,7 +251,7 @@ class WebSocketResponse(ChromeTypeBase):
         self.requestHeadersText = requestHeadersText
 
 
-# WebSocketFrame: WebSocket frame data.
+# WebSocketFrame: WebSocket message data. This represents an entire WebSocket message, not just a fragmented frame as the name suggests.
 class WebSocketFrame(ChromeTypeBase):
     def __init__(self,
                  opcode: Union['float'],
@@ -263,7 +268,7 @@ class WebSocketFrame(ChromeTypeBase):
 class CachedResource(ChromeTypeBase):
     def __init__(self,
                  url: Union['str'],
-                 type: Union['Page.ResourceType'],
+                 type: Union['ResourceType'],
                  bodySize: Union['float'],
                  response: Optional['Response'] = None,
                  ):
@@ -376,7 +381,7 @@ InterceptionStage = str
 class RequestPattern(ChromeTypeBase):
     def __init__(self,
                  urlPattern: Optional['str'] = None,
-                 resourceType: Optional['Page.ResourceType'] = None,
+                 resourceType: Optional['ResourceType'] = None,
                  interceptionStage: Optional['InterceptionStage'] = None,
                  ):
 
@@ -389,19 +394,25 @@ class RequestPattern(ChromeTypeBase):
 class SignedExchangeSignature(ChromeTypeBase):
     def __init__(self,
                  label: Union['str'],
+                 signature: Union['str'],
                  integrity: Union['str'],
-                 certUrl: Union['str'],
                  validityUrl: Union['str'],
                  date: Union['int'],
                  expires: Union['int'],
+                 certUrl: Optional['str'] = None,
+                 certSha256: Optional['str'] = None,
+                 certificates: Optional['[]'] = None,
                  ):
 
         self.label = label
+        self.signature = signature
         self.integrity = integrity
         self.certUrl = certUrl
+        self.certSha256 = certSha256
         self.validityUrl = validityUrl
         self.date = date
         self.expires = expires
+        self.certificates = certificates
 
 
 # SignedExchangeHeader: Information about a signed exchange header.https://wicg.github.io/webpackage/draft-yasskin-httpbis-origin-signed-exchanges-impl.html#cbor-representation
@@ -421,13 +432,29 @@ class SignedExchangeHeader(ChromeTypeBase):
         self.signatures = signatures
 
 
+# SignedExchangeErrorField: Field type for a signed exchange related error.
+SignedExchangeErrorField = str
+
+# SignedExchangeError: Information about a signed exchange response.
+class SignedExchangeError(ChromeTypeBase):
+    def __init__(self,
+                 message: Union['str'],
+                 signatureIndex: Optional['int'] = None,
+                 errorField: Optional['SignedExchangeErrorField'] = None,
+                 ):
+
+        self.message = message
+        self.signatureIndex = signatureIndex
+        self.errorField = errorField
+
+
 # SignedExchangeInfo: Information about a signed exchange response.
 class SignedExchangeInfo(ChromeTypeBase):
     def __init__(self,
                  outerResponse: Union['Response'],
                  header: Optional['SignedExchangeHeader'] = None,
                  securityDetails: Optional['SecurityDetails'] = None,
-                 errors: Optional['[]'] = None,
+                 errors: Optional['[SignedExchangeError]'] = None,
                  ):
 
         self.outerResponse = outerResponse
@@ -1012,14 +1039,22 @@ continueInterceptedRequest call.
     @classmethod
     def setUserAgentOverride(cls,
                              userAgent: Union['str'],
+                             acceptLanguage: Optional['str'] = None,
+                             platform: Optional['str'] = None,
                              ):
         """Allows overriding user agent with the given string.
         :param userAgent: User agent to use.
         :type userAgent: str
+        :param acceptLanguage: Browser langugage to emulate.
+        :type acceptLanguage: str
+        :param platform: The platform navigator.platform should return.
+        :type platform: str
         """
         return (
             cls.build_send_payload("setUserAgentOverride", {
                 "userAgent": userAgent,
+                "acceptLanguage": acceptLanguage,
+                "platform": platform,
             }),
             None
         )
@@ -1064,7 +1099,7 @@ class DataReceivedEvent(BaseEvent):
 class EventSourceMessageReceivedEvent(BaseEvent):
 
     js_name = 'Network.eventSourceMessageReceived'
-    hashable = ['requestId', 'eventId']
+    hashable = ['eventId', 'requestId']
     is_hashable = True
 
     def __init__(self,
@@ -1091,7 +1126,7 @@ class EventSourceMessageReceivedEvent(BaseEvent):
         self.data = data
 
     @classmethod
-    def build_hash(cls, requestId, eventId):
+    def build_hash(cls, eventId, requestId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -1109,7 +1144,7 @@ class LoadingFailedEvent(BaseEvent):
     def __init__(self,
                  requestId: Union['RequestId', dict],
                  timestamp: Union['MonotonicTime', dict],
-                 type: Union['Page.ResourceType', dict],
+                 type: Union['ResourceType', dict],
                  errorText: Union['str', dict],
                  canceled: Union['bool', dict, None] = None,
                  blockedReason: Union['BlockedReason', dict, None] = None,
@@ -1121,7 +1156,7 @@ class LoadingFailedEvent(BaseEvent):
             timestamp = MonotonicTime(**timestamp)
         self.timestamp = timestamp
         if isinstance(type, dict):
-            type = Page.ResourceType(**type)
+            type = ResourceType(**type)
         self.type = type
         if isinstance(errorText, dict):
             errorText = str(**errorText)
@@ -1153,7 +1188,7 @@ class LoadingFinishedEvent(BaseEvent):
                  requestId: Union['RequestId', dict],
                  timestamp: Union['MonotonicTime', dict],
                  encodedDataLength: Union['float', dict],
-                 blockedCrossSiteDocument: Union['bool', dict, None] = None,
+                 shouldReportCorbBlocking: Union['bool', dict, None] = None,
                  ):
         if isinstance(requestId, dict):
             requestId = RequestId(**requestId)
@@ -1164,9 +1199,9 @@ class LoadingFinishedEvent(BaseEvent):
         if isinstance(encodedDataLength, dict):
             encodedDataLength = float(**encodedDataLength)
         self.encodedDataLength = encodedDataLength
-        if isinstance(blockedCrossSiteDocument, dict):
-            blockedCrossSiteDocument = bool(**blockedCrossSiteDocument)
-        self.blockedCrossSiteDocument = blockedCrossSiteDocument
+        if isinstance(shouldReportCorbBlocking, dict):
+            shouldReportCorbBlocking = bool(**shouldReportCorbBlocking)
+        self.shouldReportCorbBlocking = shouldReportCorbBlocking
 
     @classmethod
     def build_hash(cls, requestId):
@@ -1188,7 +1223,7 @@ class RequestInterceptedEvent(BaseEvent):
                  interceptionId: Union['InterceptionId', dict],
                  request: Union['Request', dict],
                  frameId: Union['Page.FrameId', dict],
-                 resourceType: Union['Page.ResourceType', dict],
+                 resourceType: Union['ResourceType', dict],
                  isNavigationRequest: Union['bool', dict],
                  isDownload: Union['bool', dict, None] = None,
                  redirectUrl: Union['str', dict, None] = None,
@@ -1207,7 +1242,7 @@ class RequestInterceptedEvent(BaseEvent):
             frameId = Page.FrameId(**frameId)
         self.frameId = frameId
         if isinstance(resourceType, dict):
-            resourceType = Page.ResourceType(**resourceType)
+            resourceType = ResourceType(**resourceType)
         self.resourceType = resourceType
         if isinstance(isNavigationRequest, dict):
             isNavigationRequest = bool(**isNavigationRequest)
@@ -1267,7 +1302,7 @@ class RequestServedFromCacheEvent(BaseEvent):
 class RequestWillBeSentEvent(BaseEvent):
 
     js_name = 'Network.requestWillBeSent'
-    hashable = ['requestId', 'loaderId', 'frameId']
+    hashable = ['requestId', 'frameId', 'loaderId']
     is_hashable = True
 
     def __init__(self,
@@ -1279,7 +1314,7 @@ class RequestWillBeSentEvent(BaseEvent):
                  wallTime: Union['TimeSinceEpoch', dict],
                  initiator: Union['Initiator', dict],
                  redirectResponse: Union['Response', dict, None] = None,
-                 type: Union['Page.ResourceType', dict, None] = None,
+                 type: Union['ResourceType', dict, None] = None,
                  frameId: Union['Page.FrameId', dict, None] = None,
                  hasUserGesture: Union['bool', dict, None] = None,
                  ):
@@ -1308,7 +1343,7 @@ class RequestWillBeSentEvent(BaseEvent):
             redirectResponse = Response(**redirectResponse)
         self.redirectResponse = redirectResponse
         if isinstance(type, dict):
-            type = Page.ResourceType(**type)
+            type = ResourceType(**type)
         self.type = type
         if isinstance(frameId, dict):
             frameId = Page.FrameId(**frameId)
@@ -1318,7 +1353,7 @@ class RequestWillBeSentEvent(BaseEvent):
         self.hasUserGesture = hasUserGesture
 
     @classmethod
-    def build_hash(cls, requestId, loaderId, frameId):
+    def build_hash(cls, requestId, frameId, loaderId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -1388,14 +1423,14 @@ class SignedExchangeReceivedEvent(BaseEvent):
 class ResponseReceivedEvent(BaseEvent):
 
     js_name = 'Network.responseReceived'
-    hashable = ['requestId', 'loaderId', 'frameId']
+    hashable = ['requestId', 'frameId', 'loaderId']
     is_hashable = True
 
     def __init__(self,
                  requestId: Union['RequestId', dict],
                  loaderId: Union['LoaderId', dict],
                  timestamp: Union['MonotonicTime', dict],
-                 type: Union['Page.ResourceType', dict],
+                 type: Union['ResourceType', dict],
                  response: Union['Response', dict],
                  frameId: Union['Page.FrameId', dict, None] = None,
                  ):
@@ -1409,7 +1444,7 @@ class ResponseReceivedEvent(BaseEvent):
             timestamp = MonotonicTime(**timestamp)
         self.timestamp = timestamp
         if isinstance(type, dict):
-            type = Page.ResourceType(**type)
+            type = ResourceType(**type)
         self.type = type
         if isinstance(response, dict):
             response = Response(**response)
@@ -1419,7 +1454,7 @@ class ResponseReceivedEvent(BaseEvent):
         self.frameId = frameId
 
     @classmethod
-    def build_hash(cls, requestId, loaderId, frameId):
+    def build_hash(cls, requestId, frameId, loaderId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

@@ -36,6 +36,9 @@ class Bounds(ChromeTypeBase):
         self.windowState = windowState
 
 
+# PermissionType: 
+PermissionType = str
+
 # Bucket: Chrome histogram bucket.
 class Bucket(ChromeTypeBase):
     def __init__(self,
@@ -68,11 +71,59 @@ class Browser(PayloadMixin):
     """ The Browser domain defines methods and events for browser managing.
     """
     @classmethod
+    def grantPermissions(cls,
+                         origin: Union['str'],
+                         permissions: Union['[PermissionType]'],
+                         browserContextId: Optional['Target.BrowserContextID'] = None,
+                         ):
+        """Grant specific permissions to the given origin and reject all others.
+        :param origin: 
+        :type origin: str
+        :param permissions: 
+        :type permissions: [PermissionType]
+        :param browserContextId: BrowserContext to override permissions. When omitted, default browser context is used.
+        :type browserContextId: Target.BrowserContextID
+        """
+        return (
+            cls.build_send_payload("grantPermissions", {
+                "origin": origin,
+                "permissions": permissions,
+                "browserContextId": browserContextId,
+            }),
+            None
+        )
+
+    @classmethod
+    def resetPermissions(cls,
+                         browserContextId: Optional['Target.BrowserContextID'] = None,
+                         ):
+        """Reset all permission management for all origins.
+        :param browserContextId: BrowserContext to reset permissions. When omitted, default browser context is used.
+        :type browserContextId: Target.BrowserContextID
+        """
+        return (
+            cls.build_send_payload("resetPermissions", {
+                "browserContextId": browserContextId,
+            }),
+            None
+        )
+
+    @classmethod
     def close(cls):
         """Close browser gracefully.
         """
         return (
             cls.build_send_payload("close", {
+            }),
+            None
+        )
+
+    @classmethod
+    def crash(cls):
+        """Crashes browser on the main thread.
+        """
+        return (
+            cls.build_send_payload("crash", {
             }),
             None
         )
@@ -127,16 +178,20 @@ class Browser(PayloadMixin):
     @classmethod
     def getHistograms(cls,
                       query: Optional['str'] = None,
+                      delta: Optional['bool'] = None,
                       ):
         """Get Chrome histograms.
         :param query: Requested substring in name. Only histograms which have query as a
 substring in their name are extracted. An empty or absent query returns
 all histograms.
         :type query: str
+        :param delta: If true, retrieve delta since last call.
+        :type delta: bool
         """
         return (
             cls.build_send_payload("getHistograms", {
                 "query": query,
+                "delta": delta,
             }),
             cls.convert_payload({
                 "histograms": {
@@ -149,14 +204,18 @@ all histograms.
     @classmethod
     def getHistogram(cls,
                      name: Union['str'],
+                     delta: Optional['bool'] = None,
                      ):
         """Get a Chrome histogram by name.
         :param name: Requested histogram name.
         :type name: str
+        :param delta: If true, retrieve delta since last call.
+        :type delta: bool
         """
         return (
             cls.build_send_payload("getHistogram", {
                 "name": name,
+                "delta": delta,
             }),
             cls.convert_payload({
                 "histogram": {
@@ -188,10 +247,10 @@ all histograms.
 
     @classmethod
     def getWindowForTarget(cls,
-                           targetId: Union['Target.TargetID'],
+                           targetId: Optional['Target.TargetID'] = None,
                            ):
         """Get the browser window that contains the devtools target.
-        :param targetId: Devtools agent host id.
+        :param targetId: Devtools agent host id. If called as a part of the session, associated targetId is used.
         :type targetId: Target.TargetID
         """
         return (
@@ -226,6 +285,25 @@ with 'left', 'top', 'width' or 'height'. Leaves unspecified fields unchanged.
             cls.build_send_payload("setWindowBounds", {
                 "windowId": windowId,
                 "bounds": bounds,
+            }),
+            None
+        )
+
+    @classmethod
+    def setDockTile(cls,
+                    badgeLabel: Optional['str'] = None,
+                    image: Optional['str'] = None,
+                    ):
+        """Set dock tile details, platform-specific.
+        :param badgeLabel: 
+        :type badgeLabel: str
+        :param image: Png encoded image.
+        :type image: str
+        """
+        return (
+            cls.build_send_payload("setDockTile", {
+                "badgeLabel": badgeLabel,
+                "image": image,
             }),
             None
         )
