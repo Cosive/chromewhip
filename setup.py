@@ -61,7 +61,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'aiohttp==2.2.0', 'websockets==3.3', 'beautifulsoup4==4.6.0', 'lxml==4.2.5',
-        'pyyaml==3.12', 'Pillow==4.2.1'
+        'pyyaml==3.12', 'Pillow==5.3.0'
     ],
 
     # List additional groups of dependencies here (e.g. development
