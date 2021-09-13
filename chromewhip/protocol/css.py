@@ -125,6 +125,7 @@ class CSSRule(ChromeTypeBase):
                  style: Union['CSSStyle'],
                  styleSheetId: Optional['StyleSheetId'] = None,
                  media: Optional['[CSSMedia]'] = None,
+                 containerQueries: Optional['[CSSContainerQuery]'] = None,
                  ):
 
         self.styleSheetId = styleSheetId
@@ -132,6 +133,7 @@ class CSSRule(ChromeTypeBase):
         self.origin = origin
         self.style = style
         self.media = media
+        self.containerQueries = containerQueries
 
 
 # RuleUsage: CSS coverage information.
@@ -273,6 +275,21 @@ class MediaQueryExpression(ChromeTypeBase):
         self.feature = feature
         self.valueRange = valueRange
         self.computedLength = computedLength
+
+
+# CSSContainerQuery: CSS container query rule descriptor.
+class CSSContainerQuery(ChromeTypeBase):
+    def __init__(self,
+                 text: Union['str'],
+                 range: Optional['SourceRange'] = None,
+                 styleSheetId: Optional['StyleSheetId'] = None,
+                 name: Optional['str'] = None,
+                 ):
+
+        self.text = text
+        self.range = range
+        self.styleSheetId = styleSheetId
+        self.name = name
 
 
 # PlatformFontUsage: Information about amount of glyphs that were rendered with given font.
@@ -766,6 +783,34 @@ property
             cls.convert_payload({
                 "media": {
                     "class": CSSMedia,
+                    "optional": False
+                },
+            })
+        )
+
+    @classmethod
+    def setContainerQueryText(cls,
+                              styleSheetId: Union['StyleSheetId'],
+                              range: Union['SourceRange'],
+                              text: Union['str'],
+                              ):
+        """Modifies the expression of a container query.
+        :param styleSheetId: 
+        :type styleSheetId: StyleSheetId
+        :param range: 
+        :type range: SourceRange
+        :param text: 
+        :type text: str
+        """
+        return (
+            cls.build_send_payload("setContainerQueryText", {
+                "styleSheetId": styleSheetId,
+                "range": range,
+                "text": text,
+            }),
+            cls.convert_payload({
+                "containerQuery": {
+                    "class": CSSContainerQuery,
                     "optional": False
                 },
             })

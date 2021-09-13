@@ -26,6 +26,20 @@ FrameId = str
 # AdFrameType: Indicates whether a frame has been identified as an ad.
 AdFrameType = str
 
+# AdFrameExplanation: 
+AdFrameExplanation = str
+
+# AdFrameStatus: Indicates whether a frame has been identified as an ad and why.
+class AdFrameStatus(ChromeTypeBase):
+    def __init__(self,
+                 adFrameType: Union['AdFrameType'],
+                 explanations: Optional['[AdFrameExplanation]'] = None,
+                 ):
+
+        self.adFrameType = adFrameType
+        self.explanations = explanations
+
+
 # SecureContextType: Indicates whether the frame is a secure context and why it is the case.
 SecureContextType = str
 
@@ -35,7 +49,7 @@ CrossOriginIsolatedContextType = str
 # GatedAPIFeatures: 
 GatedAPIFeatures = str
 
-# PermissionsPolicyFeature: All Permissions Policy features. This enum should match the one definedin renderer/core/feature_policy/feature_policy_features.json5.
+# PermissionsPolicyFeature: All Permissions Policy features. This enum should match the one definedin third_party/blink/renderer/core/permissions_policy/permissions_policy_features.json5.
 PermissionsPolicyFeature = str
 
 # PermissionsPolicyBlockReason: Reason for a permissions policy feature to be disabled.
@@ -65,6 +79,60 @@ class PermissionsPolicyFeatureState(ChromeTypeBase):
         self.locator = locator
 
 
+# OriginTrialTokenStatus: Origin Trial(https://www.chromium.org/blink/origin-trials) support.Status for an Origin Trial token.
+OriginTrialTokenStatus = str
+
+# OriginTrialStatus: Status for an Origin Trial.
+OriginTrialStatus = str
+
+# OriginTrialUsageRestriction: 
+OriginTrialUsageRestriction = str
+
+# OriginTrialToken: 
+class OriginTrialToken(ChromeTypeBase):
+    def __init__(self,
+                 origin: Union['str'],
+                 matchSubDomains: Union['bool'],
+                 trialName: Union['str'],
+                 expiryTime: Union['Network.TimeSinceEpoch'],
+                 isThirdParty: Union['bool'],
+                 usageRestriction: Union['OriginTrialUsageRestriction'],
+                 ):
+
+        self.origin = origin
+        self.matchSubDomains = matchSubDomains
+        self.trialName = trialName
+        self.expiryTime = expiryTime
+        self.isThirdParty = isThirdParty
+        self.usageRestriction = usageRestriction
+
+
+# OriginTrialTokenWithStatus: 
+class OriginTrialTokenWithStatus(ChromeTypeBase):
+    def __init__(self,
+                 rawTokenText: Union['str'],
+                 status: Union['OriginTrialTokenStatus'],
+                 parsedToken: Optional['OriginTrialToken'] = None,
+                 ):
+
+        self.rawTokenText = rawTokenText
+        self.parsedToken = parsedToken
+        self.status = status
+
+
+# OriginTrial: 
+class OriginTrial(ChromeTypeBase):
+    def __init__(self,
+                 trialName: Union['str'],
+                 status: Union['OriginTrialStatus'],
+                 tokensWithStatus: Union['[OriginTrialTokenWithStatus]'],
+                 ):
+
+        self.trialName = trialName
+        self.status = status
+        self.tokensWithStatus = tokensWithStatus
+
+
 # Frame: Information about the Frame on the page.
 class Frame(ChromeTypeBase):
     def __init__(self,
@@ -77,11 +145,11 @@ class Frame(ChromeTypeBase):
                  secureContextType: Union['SecureContextType'],
                  crossOriginIsolatedContextType: Union['CrossOriginIsolatedContextType'],
                  gatedAPIFeatures: Union['[GatedAPIFeatures]'],
-                 parentId: Optional['str'] = None,
+                 parentId: Optional['FrameId'] = None,
                  name: Optional['str'] = None,
                  urlFragment: Optional['str'] = None,
                  unreachableUrl: Optional['str'] = None,
-                 adFrameType: Optional['AdFrameType'] = None,
+                 adFrameStatus: Optional['AdFrameStatus'] = None,
                  ):
 
         self.id = id
@@ -94,7 +162,7 @@ class Frame(ChromeTypeBase):
         self.securityOrigin = securityOrigin
         self.mimeType = mimeType
         self.unreachableUrl = unreachableUrl
-        self.adFrameType = adFrameType
+        self.adFrameStatus = adFrameStatus
         self.secureContextType = secureContextType
         self.crossOriginIsolatedContextType = crossOriginIsolatedContextType
         self.gatedAPIFeatures = gatedAPIFeatures
@@ -345,6 +413,26 @@ class CompilationCacheParams(ChromeTypeBase):
         self.eager = eager
 
 
+# NavigationType: The type of a frameNavigated event.
+NavigationType = str
+
+# BackForwardCacheNotRestoredReason: List of not restored reasons for back-forward cache.
+BackForwardCacheNotRestoredReason = str
+
+# BackForwardCacheNotRestoredReasonType: Types of not restored reasons for back-forward cache.
+BackForwardCacheNotRestoredReasonType = str
+
+# BackForwardCacheNotRestoredExplanation: 
+class BackForwardCacheNotRestoredExplanation(ChromeTypeBase):
+    def __init__(self,
+                 type: Union['BackForwardCacheNotRestoredReasonType'],
+                 reason: Union['BackForwardCacheNotRestoredReason'],
+                 ):
+
+        self.type = type
+        self.reason = reason
+
+
 class Page(PayloadMixin):
     """ Actions and events related to the inspected page belong to the page domain.
     """
@@ -372,6 +460,7 @@ class Page(PayloadMixin):
     def addScriptToEvaluateOnNewDocument(cls,
                                          source: Union['str'],
                                          worldName: Optional['str'] = None,
+                                         includeCommandLineAPI: Optional['bool'] = None,
                                          ):
         """Evaluates given script in every frame upon creation (before loading frame's scripts).
         :param source: 
@@ -380,11 +469,15 @@ class Page(PayloadMixin):
 This world name will be used as the ExecutionContextDescription::name when the corresponding
 event is emitted.
         :type worldName: str
+        :param includeCommandLineAPI: Specifies whether command line API should be available to the script, defaults
+to false.
+        :type includeCommandLineAPI: bool
         """
         return (
             cls.build_send_payload("addScriptToEvaluateOnNewDocument", {
                 "source": source,
                 "worldName": worldName,
+                "includeCommandLineAPI": includeCommandLineAPI,
             }),
             cls.convert_payload({
                 "identifier": {
@@ -463,7 +556,7 @@ iframes, shadow DOM, external resources, and element-inline styles.
 
     @classmethod
     def clearDeviceMetricsOverride(cls):
-        """Clears the overriden device metrics.
+        """Clears the overridden device metrics.
         """
         return (
             cls.build_send_payload("clearDeviceMetricsOverride", {
@@ -483,7 +576,7 @@ iframes, shadow DOM, external resources, and element-inline styles.
 
     @classmethod
     def clearGeolocationOverride(cls):
-        """Clears the overriden Geolocation Position and Error.
+        """Clears the overridden Geolocation Position and Error.
         """
         return (
             cls.build_send_payload("clearGeolocationOverride", {
@@ -610,6 +703,21 @@ option, use with caution.
             }),
             cls.convert_payload({
                 "primaryIcon": {
+                    "class": str,
+                    "optional": True
+                },
+            })
+        )
+
+    @classmethod
+    def getAppId(cls):
+        """Returns the unique (PWA) app id.
+        """
+        return (
+            cls.build_send_payload("getAppId", {
+            }),
+            cls.convert_payload({
+                "appId": {
                     "class": str,
                     "optional": True
                 },
@@ -1080,6 +1188,26 @@ Argument will be ignored if reloading dataURL origin.
         )
 
     @classmethod
+    def getOriginTrials(cls,
+                        frameId: Union['FrameId'],
+                        ):
+        """Get Origin Trials on given frame.
+        :param frameId: 
+        :type frameId: FrameId
+        """
+        return (
+            cls.build_send_payload("getOriginTrials", {
+                "frameId": frameId,
+            }),
+            cls.convert_payload({
+                "originTrials": {
+                    "class": [OriginTrial],
+                    "optional": False
+                },
+            })
+        )
+
+    @classmethod
     def setDeviceMetricsOverride(cls,
                                  width: Union['int'],
                                  height: Union['int'],
@@ -1222,7 +1350,7 @@ autosizing and more.
         :param behavior: Whether to allow all or deny all download requests, or use default Chrome behavior if
 available (otherwise deny).
         :type behavior: str
-        :param downloadPath: The default path to save downloaded files to. This is requred if behavior is set to 'allow'
+        :param downloadPath: The default path to save downloaded files to. This is required if behavior is set to 'allow'
         :type downloadPath: str
         """
         return (
@@ -1427,7 +1555,7 @@ See also: `Page.compilationCacheProduced`.
 cross-process navigation.
         :param url: 
         :type url: str
-        :param data: Base64-encoded data
+        :param data: Base64-encoded data (Encoded as a base64 string when passed over JSON)
         :type data: str
         """
         return (
@@ -1634,10 +1762,14 @@ class FrameNavigatedEvent(BaseEvent):
 
     def __init__(self,
                  frame: Union['Frame', dict],
+                 type: Union['NavigationType', dict],
                  ):
         if isinstance(frame, dict):
             frame = Frame(**frame)
         self.frame = frame
+        if isinstance(type, dict):
+            type = NavigationType(**type)
+        self.type = type
 
     @classmethod
     def build_hash(cls, frameId):
@@ -1959,7 +2091,7 @@ class JavascriptDialogOpeningEvent(BaseEvent):
 class LifecycleEventEvent(BaseEvent):
 
     js_name = 'Page.lifecycleEvent'
-    hashable = ['frameId', 'loaderId']
+    hashable = ['loaderId', 'frameId']
     is_hashable = True
 
     def __init__(self,
@@ -1982,7 +2114,38 @@ class LifecycleEventEvent(BaseEvent):
         self.timestamp = timestamp
 
     @classmethod
-    def build_hash(cls, frameId, loaderId):
+    def build_hash(cls, loaderId, frameId):
+        kwargs = locals()
+        kwargs.pop('cls')
+        serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
+        h = '{}:{}'.format(cls.js_name, serialized_id_params)
+        log.debug('generated hash = %s' % h)
+        return h
+
+
+class BackForwardCacheNotUsedEvent(BaseEvent):
+
+    js_name = 'Page.backForwardCacheNotUsed'
+    hashable = ['loaderId', 'frameId']
+    is_hashable = True
+
+    def __init__(self,
+                 loaderId: Union['Network.LoaderId', dict],
+                 frameId: Union['FrameId', dict],
+                 notRestoredExplanations: Union['[BackForwardCacheNotRestoredExplanation]', dict],
+                 ):
+        if isinstance(loaderId, dict):
+            loaderId = Network.LoaderId(**loaderId)
+        self.loaderId = loaderId
+        if isinstance(frameId, dict):
+            frameId = FrameId(**frameId)
+        self.frameId = frameId
+        if isinstance(notRestoredExplanations, dict):
+            notRestoredExplanations = [BackForwardCacheNotRestoredExplanation](**notRestoredExplanations)
+        self.notRestoredExplanations = notRestoredExplanations
+
+    @classmethod
+    def build_hash(cls, loaderId, frameId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

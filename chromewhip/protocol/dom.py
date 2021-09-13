@@ -39,6 +39,9 @@ PseudoType = str
 # ShadowRootType: Shadow root type.
 ShadowRootType = str
 
+# CompatibilityMode: Document compatibility mode.
+CompatibilityMode = str
+
 # Node: DOM interaction is implemented in terms of mirror objects that represent the actual DOM nodes.DOMNode is a base node mirror type.
 class Node(ChromeTypeBase):
     def __init__(self,
@@ -70,6 +73,7 @@ class Node(ChromeTypeBase):
                  importedDocument: Optional['Node'] = None,
                  distributedNodes: Optional['[BackendNode]'] = None,
                  isSVG: Optional['bool'] = None,
+                 compatibilityMode: Optional['CompatibilityMode'] = None,
                  ):
 
         self.nodeId = nodeId
@@ -100,6 +104,7 @@ class Node(ChromeTypeBase):
         self.importedDocument = importedDocument
         self.distributedNodes = distributedNodes
         self.isSVG = isSVG
+        self.compatibilityMode = compatibilityMode
 
 
 # RGBA: A structure holding an RGBA color.
@@ -1199,6 +1204,53 @@ $x functions).
             })
         )
 
+    @classmethod
+    def getContainerForNode(cls,
+                            nodeId: Union['NodeId'],
+                            containerName: Optional['str'] = None,
+                            ):
+        """Returns the container of the given node based on container query conditions.
+If containerName is given, it will find the nearest container with a matching name;
+otherwise it will find the nearest container regardless of its container name.
+        :param nodeId: 
+        :type nodeId: NodeId
+        :param containerName: 
+        :type containerName: str
+        """
+        return (
+            cls.build_send_payload("getContainerForNode", {
+                "nodeId": nodeId,
+                "containerName": containerName,
+            }),
+            cls.convert_payload({
+                "nodeId": {
+                    "class": NodeId,
+                    "optional": True
+                },
+            })
+        )
+
+    @classmethod
+    def getQueryingDescendantsForContainer(cls,
+                                           nodeId: Union['NodeId'],
+                                           ):
+        """Returns the descendants of a container query container that have
+container queries against this container.
+        :param nodeId: Id of the container node to find querying descendants from.
+        :type nodeId: NodeId
+        """
+        return (
+            cls.build_send_payload("getQueryingDescendantsForContainer", {
+                "nodeId": nodeId,
+            }),
+            cls.convert_payload({
+                "nodeIds": {
+                    "class": [NodeId],
+                    "optional": False
+                },
+            })
+        )
+
 
 
 class AttributeModifiedEvent(BaseEvent):
@@ -1316,7 +1368,7 @@ class ChildNodeCountUpdatedEvent(BaseEvent):
 class ChildNodeInsertedEvent(BaseEvent):
 
     js_name = 'Dom.childNodeInserted'
-    hashable = ['parentNodeId', 'previousNodeId']
+    hashable = ['previousNodeId', 'parentNodeId']
     is_hashable = True
 
     def __init__(self,
@@ -1335,7 +1387,7 @@ class ChildNodeInsertedEvent(BaseEvent):
         self.node = node
 
     @classmethod
-    def build_hash(cls, parentNodeId, previousNodeId):
+    def build_hash(cls, previousNodeId, parentNodeId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

@@ -156,6 +156,7 @@ class HighlightConfig(ChromeTypeBase):
                  flexContainerHighlightConfig: Optional['FlexContainerHighlightConfig'] = None,
                  flexItemHighlightConfig: Optional['FlexItemHighlightConfig'] = None,
                  contrastAlgorithm: Optional['ContrastAlgorithm'] = None,
+                 containerQueryContainerHighlightConfig: Optional['ContainerQueryContainerHighlightConfig'] = None,
                  ):
 
         self.showInfo = showInfo
@@ -176,6 +177,7 @@ class HighlightConfig(ChromeTypeBase):
         self.flexContainerHighlightConfig = flexContainerHighlightConfig
         self.flexItemHighlightConfig = flexItemHighlightConfig
         self.contrastAlgorithm = contrastAlgorithm
+        self.containerQueryContainerHighlightConfig = containerQueryContainerHighlightConfig
 
 
 # ColorFormat: 
@@ -240,6 +242,28 @@ class HingeConfig(ChromeTypeBase):
         self.rect = rect
         self.contentColor = contentColor
         self.outlineColor = outlineColor
+
+
+# ContainerQueryHighlightConfig: 
+class ContainerQueryHighlightConfig(ChromeTypeBase):
+    def __init__(self,
+                 containerQueryContainerHighlightConfig: Union['ContainerQueryContainerHighlightConfig'],
+                 nodeId: Union['DOM.NodeId'],
+                 ):
+
+        self.containerQueryContainerHighlightConfig = containerQueryContainerHighlightConfig
+        self.nodeId = nodeId
+
+
+# ContainerQueryContainerHighlightConfig: 
+class ContainerQueryContainerHighlightConfig(ChromeTypeBase):
+    def __init__(self,
+                 containerBorder: Optional['LineStyle'] = None,
+                 descendantBorder: Optional['LineStyle'] = None,
+                 ):
+
+        self.containerBorder = containerBorder
+        self.descendantBorder = descendantBorder
 
 
 # InspectMode: 
@@ -361,6 +385,9 @@ class Overlay(PayloadMixin):
                        contentOutlineColor: Optional['DOM.RGBA'] = None,
                        ):
         """Highlights owner element of the frame with given id.
+Deprecated: Doesn't work reliablity and cannot be fixed due to process
+separatation (the owner node might be in a different process). Determine
+the owner node in the client and use highlightNode.
         :param frameId: Identifier of the frame to highlight.
         :type frameId: Page.FrameId
         :param contentColor: The content box highlight fill color (default: transparent).
@@ -617,6 +644,21 @@ Backend then generates 'inspectNodeRequested' event upon element selection.
         return (
             cls.build_send_payload("setShowScrollSnapOverlays", {
                 "scrollSnapHighlightConfigs": scrollSnapHighlightConfigs,
+            }),
+            None
+        )
+
+    @classmethod
+    def setShowContainerQueryOverlays(cls,
+                                      containerQueryHighlightConfigs: Union['[ContainerQueryHighlightConfig]'],
+                                      ):
+        """
+        :param containerQueryHighlightConfigs: An array of node identifiers and descriptors for the highlight appearance.
+        :type containerQueryHighlightConfigs: [ContainerQueryHighlightConfig]
+        """
+        return (
+            cls.build_send_payload("setShowContainerQueryOverlays", {
+                "containerQueryHighlightConfigs": containerQueryHighlightConfigs,
             }),
             None
         )

@@ -175,7 +175,7 @@ their dowmload guids.
         :type behavior: str
         :param browserContextId: BrowserContext to set download behavior. When omitted, default browser context is used.
         :type browserContextId: BrowserContextID
-        :param downloadPath: The default path to save downloaded files to. This is requred if behavior is set to 'allow'
+        :param downloadPath: The default path to save downloaded files to. This is required if behavior is set to 'allow'
 or 'allowAndName'.
         :type downloadPath: str
         :param eventsEnabled: Whether to emit download events (defaults to false).
@@ -409,7 +409,7 @@ with 'left', 'top', 'width' or 'height'. Leaves unspecified fields unchanged.
         """Set dock tile details, platform-specific.
         :param badgeLabel: 
         :type badgeLabel: str
-        :param image: Png encoded image.
+        :param image: Png encoded image. (Encoded as a base64 string when passed over JSON)
         :type image: str
         """
         return (

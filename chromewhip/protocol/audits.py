@@ -59,16 +59,18 @@ SameSiteCookieOperation = str
 # SameSiteCookieIssueDetails: This information is currently necessary, as the front-end has a difficulttime finding a specific cookie. With this, we can convey specific errorinformation without the cookie.
 class SameSiteCookieIssueDetails(ChromeTypeBase):
     def __init__(self,
-                 cookie: Union['AffectedCookie'],
                  cookieWarningReasons: Union['[SameSiteCookieWarningReason]'],
                  cookieExclusionReasons: Union['[SameSiteCookieExclusionReason]'],
                  operation: Union['SameSiteCookieOperation'],
+                 cookie: Optional['AffectedCookie'] = None,
+                 rawCookieLine: Optional['str'] = None,
                  siteForCookies: Optional['str'] = None,
                  cookieUrl: Optional['str'] = None,
                  request: Optional['AffectedRequest'] = None,
                  ):
 
         self.cookie = cookie
+        self.rawCookieLine = rawCookieLine
         self.cookieWarningReasons = cookieWarningReasons
         self.cookieExclusionReasons = cookieExclusionReasons
         self.operation = operation
@@ -181,7 +183,7 @@ class ContentSecurityPolicyIssueDetails(ChromeTypeBase):
 # SharedArrayBufferIssueType: 
 SharedArrayBufferIssueType = str
 
-# SharedArrayBufferIssueDetails: Details for a issue arising from an SAB being instantiated in, ortransfered to a context that is not cross-origin isolated.
+# SharedArrayBufferIssueDetails: Details for a issue arising from an SAB being instantiated in, ortransferred to a context that is not cross-origin isolated.
 class SharedArrayBufferIssueDetails(ChromeTypeBase):
     def __init__(self,
                  sourceCodeLocation: Union['SourceCodeLocation'],
@@ -241,6 +243,7 @@ class CorsIssueDetails(ChromeTypeBase):
                  corsErrorStatus: Union['Network.CorsErrorStatus'],
                  isWarning: Union['bool'],
                  request: Union['AffectedRequest'],
+                 location: Optional['SourceCodeLocation'] = None,
                  initiatorOrigin: Optional['str'] = None,
                  resourceIPAddressSpace: Optional['Network.IPAddressSpace'] = None,
                  clientSecurityState: Optional['Network.ClientSecurityState'] = None,
@@ -249,9 +252,73 @@ class CorsIssueDetails(ChromeTypeBase):
         self.corsErrorStatus = corsErrorStatus
         self.isWarning = isWarning
         self.request = request
+        self.location = location
         self.initiatorOrigin = initiatorOrigin
         self.resourceIPAddressSpace = resourceIPAddressSpace
         self.clientSecurityState = clientSecurityState
+
+
+# AttributionReportingIssueType: 
+AttributionReportingIssueType = str
+
+# AttributionReportingIssueDetails: Details for issues around "Attribution Reporting API" usage.Explainer: https://github.com/WICG/conversion-measurement-api
+class AttributionReportingIssueDetails(ChromeTypeBase):
+    def __init__(self,
+                 violationType: Union['AttributionReportingIssueType'],
+                 frame: Optional['AffectedFrame'] = None,
+                 request: Optional['AffectedRequest'] = None,
+                 violatingNodeId: Optional['DOM.BackendNodeId'] = None,
+                 invalidParameter: Optional['str'] = None,
+                 ):
+
+        self.violationType = violationType
+        self.frame = frame
+        self.request = request
+        self.violatingNodeId = violatingNodeId
+        self.invalidParameter = invalidParameter
+
+
+# QuirksModeIssueDetails: Details for issues about documents in Quirks Modeor Limited Quirks Mode that affects page layouting.
+class QuirksModeIssueDetails(ChromeTypeBase):
+    def __init__(self,
+                 isLimitedQuirksMode: Union['bool'],
+                 documentNodeId: Union['DOM.BackendNodeId'],
+                 url: Union['str'],
+                 frameId: Union['Page.FrameId'],
+                 loaderId: Union['Network.LoaderId'],
+                 ):
+
+        self.isLimitedQuirksMode = isLimitedQuirksMode
+        self.documentNodeId = documentNodeId
+        self.url = url
+        self.frameId = frameId
+        self.loaderId = loaderId
+
+
+# NavigatorUserAgentIssueDetails: 
+class NavigatorUserAgentIssueDetails(ChromeTypeBase):
+    def __init__(self,
+                 url: Union['str'],
+                 location: Optional['SourceCodeLocation'] = None,
+                 ):
+
+        self.url = url
+        self.location = location
+
+
+# WasmCrossOriginModuleSharingIssueDetails: 
+class WasmCrossOriginModuleSharingIssueDetails(ChromeTypeBase):
+    def __init__(self,
+                 wasmModuleUrl: Union['str'],
+                 sourceOrigin: Union['str'],
+                 targetOrigin: Union['str'],
+                 isWarning: Union['bool'],
+                 ):
+
+        self.wasmModuleUrl = wasmModuleUrl
+        self.sourceOrigin = sourceOrigin
+        self.targetOrigin = targetOrigin
+        self.isWarning = isWarning
 
 
 # InspectorIssueCode: A unique identifier for the type of issue. Each type may use one of theoptional fields in InspectorIssueDetails to convey more specificinformation about the kind of issue.
@@ -269,6 +336,10 @@ class InspectorIssueDetails(ChromeTypeBase):
                  twaQualityEnforcementDetails: Optional['TrustedWebActivityIssueDetails'] = None,
                  lowTextContrastIssueDetails: Optional['LowTextContrastIssueDetails'] = None,
                  corsIssueDetails: Optional['CorsIssueDetails'] = None,
+                 attributionReportingIssueDetails: Optional['AttributionReportingIssueDetails'] = None,
+                 quirksModeIssueDetails: Optional['QuirksModeIssueDetails'] = None,
+                 navigatorUserAgentIssueDetails: Optional['NavigatorUserAgentIssueDetails'] = None,
+                 wasmCrossOriginModuleSharingIssue: Optional['WasmCrossOriginModuleSharingIssueDetails'] = None,
                  ):
 
         self.sameSiteCookieIssueDetails = sameSiteCookieIssueDetails
@@ -280,17 +351,26 @@ class InspectorIssueDetails(ChromeTypeBase):
         self.twaQualityEnforcementDetails = twaQualityEnforcementDetails
         self.lowTextContrastIssueDetails = lowTextContrastIssueDetails
         self.corsIssueDetails = corsIssueDetails
+        self.attributionReportingIssueDetails = attributionReportingIssueDetails
+        self.quirksModeIssueDetails = quirksModeIssueDetails
+        self.navigatorUserAgentIssueDetails = navigatorUserAgentIssueDetails
+        self.wasmCrossOriginModuleSharingIssue = wasmCrossOriginModuleSharingIssue
 
+
+# IssueId: A unique id for a DevTools inspector issue. Allows other entities (e.g.exceptions, CDP message, console messages, etc.) to reference an issue.
+IssueId = str
 
 # InspectorIssue: An inspector issue reported from the back-end.
 class InspectorIssue(ChromeTypeBase):
     def __init__(self,
                  code: Union['InspectorIssueCode'],
                  details: Union['InspectorIssueDetails'],
+                 issueId: Optional['IssueId'] = None,
                  ):
 
         self.code = code
         self.details = details
+        self.issueId = issueId
 
 
 class Audits(PayloadMixin):

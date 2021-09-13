@@ -346,7 +346,7 @@ class AudioParamCreatedEvent(BaseEvent):
 class AudioParamWillBeDestroyedEvent(BaseEvent):
 
     js_name = 'Webaudio.audioParamWillBeDestroyed'
-    hashable = ['nodeId', 'paramId', 'contextId']
+    hashable = ['paramId', 'nodeId', 'contextId']
     is_hashable = True
 
     def __init__(self,
@@ -365,7 +365,7 @@ class AudioParamWillBeDestroyedEvent(BaseEvent):
         self.paramId = paramId
 
     @classmethod
-    def build_hash(cls, nodeId, paramId, contextId):
+    def build_hash(cls, paramId, nodeId, contextId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -377,7 +377,7 @@ class AudioParamWillBeDestroyedEvent(BaseEvent):
 class NodesConnectedEvent(BaseEvent):
 
     js_name = 'Webaudio.nodesConnected'
-    hashable = ['sourceId', 'destinationId', 'contextId']
+    hashable = ['destinationId', 'sourceId', 'contextId']
     is_hashable = True
 
     def __init__(self,
@@ -404,7 +404,7 @@ class NodesConnectedEvent(BaseEvent):
         self.destinationInputIndex = destinationInputIndex
 
     @classmethod
-    def build_hash(cls, sourceId, destinationId, contextId):
+    def build_hash(cls, destinationId, sourceId, contextId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -416,7 +416,7 @@ class NodesConnectedEvent(BaseEvent):
 class NodesDisconnectedEvent(BaseEvent):
 
     js_name = 'Webaudio.nodesDisconnected'
-    hashable = ['sourceId', 'destinationId', 'contextId']
+    hashable = ['destinationId', 'sourceId', 'contextId']
     is_hashable = True
 
     def __init__(self,
@@ -443,7 +443,7 @@ class NodesDisconnectedEvent(BaseEvent):
         self.destinationInputIndex = destinationInputIndex
 
     @classmethod
-    def build_hash(cls, sourceId, destinationId, contextId):
+    def build_hash(cls, destinationId, sourceId, contextId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -455,7 +455,7 @@ class NodesDisconnectedEvent(BaseEvent):
 class NodeParamConnectedEvent(BaseEvent):
 
     js_name = 'Webaudio.nodeParamConnected'
-    hashable = ['sourceId', 'destinationId', 'contextId']
+    hashable = ['destinationId', 'sourceId', 'contextId']
     is_hashable = True
 
     def __init__(self,
@@ -478,7 +478,7 @@ class NodeParamConnectedEvent(BaseEvent):
         self.sourceOutputIndex = sourceOutputIndex
 
     @classmethod
-    def build_hash(cls, sourceId, destinationId, contextId):
+    def build_hash(cls, destinationId, sourceId, contextId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -490,7 +490,7 @@ class NodeParamConnectedEvent(BaseEvent):
 class NodeParamDisconnectedEvent(BaseEvent):
 
     js_name = 'Webaudio.nodeParamDisconnected'
-    hashable = ['sourceId', 'destinationId', 'contextId']
+    hashable = ['destinationId', 'sourceId', 'contextId']
     is_hashable = True
 
     def __init__(self,
@@ -513,7 +513,7 @@ class NodeParamDisconnectedEvent(BaseEvent):
         self.sourceOutputIndex = sourceOutputIndex
 
     @classmethod
-    def build_hash(cls, sourceId, destinationId, contextId):
+    def build_hash(cls, destinationId, sourceId, contextId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

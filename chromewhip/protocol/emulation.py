@@ -109,7 +109,7 @@ class Emulation(PayloadMixin):
 
     @classmethod
     def clearDeviceMetricsOverride(cls):
-        """Clears the overriden device metrics.
+        """Clears the overridden device metrics.
         """
         return (
             cls.build_send_payload("clearDeviceMetricsOverride", {
@@ -119,7 +119,7 @@ class Emulation(PayloadMixin):
 
     @classmethod
     def clearGeolocationOverride(cls):
-        """Clears the overriden Geolocation Position and Error.
+        """Clears the overridden Geolocation Position and Error.
         """
         return (
             cls.build_send_payload("clearGeolocationOverride", {
@@ -147,6 +147,22 @@ class Emulation(PayloadMixin):
         """
         return (
             cls.build_send_payload("setFocusEmulationEnabled", {
+                "enabled": enabled,
+            }),
+            None
+        )
+
+    @classmethod
+    def setAutoDarkModeOverride(cls,
+                                enabled: Optional['bool'] = None,
+                                ):
+        """Automatically render all web contents using a dark theme.
+        :param enabled: Whether to enable or disable automatic dark mode.
+If not specified, any existing override will be cleared.
+        :type enabled: bool
+        """
+        return (
+            cls.build_send_payload("setAutoDarkModeOverride", {
                 "enabled": enabled,
             }),
             None
@@ -473,7 +489,7 @@ forwards to prevent deadlock.
         :param waitForNavigation: If set the virtual time policy change should be deferred until any frame starts navigating.
 Note any previous deferred policy change is superseded.
         :type waitForNavigation: bool
-        :param initialVirtualTime: If set, base::Time::Now will be overriden to initially return this value.
+        :param initialVirtualTime: If set, base::Time::Now will be overridden to initially return this value.
         :type initialVirtualTime: Network.TimeSinceEpoch
         """
         return (

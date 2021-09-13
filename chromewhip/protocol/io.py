@@ -13,7 +13,7 @@ from chromewhip.helpers import PayloadMixin, BaseEvent, ChromeTypeBase
 
 log = logging.getLogger(__name__)
 
-# StreamHandle: This is either obtained from another method or specifed as `blob:&lt;uuid&gt;` where`&lt;uuid&gt` is an UUID of a Blob.
+# StreamHandle: This is either obtained from another method or specified as `blob:&lt;uuid&gt;` where`&lt;uuid&gt` is an UUID of a Blob.
 StreamHandle = str
 
 class IO(PayloadMixin):

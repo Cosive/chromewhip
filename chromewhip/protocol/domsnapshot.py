@@ -216,6 +216,7 @@ class NodeTreeSnapshot(ChromeTypeBase):
     def __init__(self,
                  parentIndex: Optional['[]'] = None,
                  nodeType: Optional['[]'] = None,
+                 shadowRootType: Optional['RareStringData'] = None,
                  nodeName: Optional['[StringIndex]'] = None,
                  nodeValue: Optional['[StringIndex]'] = None,
                  backendNodeId: Optional['[DOM.BackendNodeId]'] = None,
@@ -233,6 +234,7 @@ class NodeTreeSnapshot(ChromeTypeBase):
 
         self.parentIndex = parentIndex
         self.nodeType = nodeType
+        self.shadowRootType = shadowRootType
         self.nodeName = nodeName
         self.nodeValue = nodeValue
         self.backendNodeId = backendNodeId
@@ -260,6 +262,8 @@ class LayoutTreeSnapshot(ChromeTypeBase):
                  offsetRects: Optional['[Rectangle]'] = None,
                  scrollRects: Optional['[Rectangle]'] = None,
                  clientRects: Optional['[Rectangle]'] = None,
+                 blendedBackgroundColors: Optional['[StringIndex]'] = None,
+                 textColorOpacities: Optional['[]'] = None,
                  ):
 
         self.nodeIndex = nodeIndex
@@ -271,6 +275,8 @@ class LayoutTreeSnapshot(ChromeTypeBase):
         self.offsetRects = offsetRects
         self.scrollRects = scrollRects
         self.clientRects = clientRects
+        self.blendedBackgroundColors = blendedBackgroundColors
+        self.textColorOpacities = textColorOpacities
 
 
 # TextBoxSnapshot: Table of details of the post layout rendered text positions. The exact layout should not be regarded asstable and may change between versions.
@@ -359,6 +365,8 @@ flattened.
                         computedStyles: Union['[]'],
                         includePaintOrder: Optional['bool'] = None,
                         includeDOMRects: Optional['bool'] = None,
+                        includeBlendedBackgroundColors: Optional['bool'] = None,
+                        includeTextColorOpacities: Optional['bool'] = None,
                         ):
         """Returns a document snapshot, including the full DOM tree of the root node (including iframes,
 template contents, and imported documents) in a flattened array, as well as layout and
@@ -370,12 +378,22 @@ flattened.
         :type includePaintOrder: bool
         :param includeDOMRects: Whether to include DOM rectangles (offsetRects, clientRects, scrollRects) into the snapshot
         :type includeDOMRects: bool
+        :param includeBlendedBackgroundColors: Whether to include blended background colors in the snapshot (default: false).
+Blended background color is achieved by blending background colors of all elements
+that overlap with the current element.
+        :type includeBlendedBackgroundColors: bool
+        :param includeTextColorOpacities: Whether to include text color opacity in the snapshot (default: false).
+An element might have the opacity property set that affects the text color of the element.
+The final text color opacity is computed based on the opacity of all overlapping elements.
+        :type includeTextColorOpacities: bool
         """
         return (
             cls.build_send_payload("captureSnapshot", {
                 "computedStyles": computedStyles,
                 "includePaintOrder": includePaintOrder,
                 "includeDOMRects": includeDOMRects,
+                "includeBlendedBackgroundColors": includeBlendedBackgroundColors,
+                "includeTextColorOpacities": includeTextColorOpacities,
             }),
             cls.convert_payload({
                 "documents": {

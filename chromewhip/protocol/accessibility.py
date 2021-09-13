@@ -178,16 +178,25 @@ This turns on accessibility for the page, which can impact performance until acc
 
     @classmethod
     def getFullAXTree(cls,
+                      depth: Optional['int'] = None,
                       max_depth: Optional['int'] = None,
+                      frameId: Optional['Page.FrameId'] = None,
                       ):
         """Fetches the entire accessibility tree for the root Document
-        :param max_depth: The maximum depth at which descendants of the root node should be retrieved.
+        :param depth: The maximum depth at which descendants of the root node should be retrieved.
 If omitted, the full tree is returned.
+        :type depth: int
+        :param max_depth: Deprecated. This parameter has been renamed to `depth`. If depth is not provided, max_depth will be used.
         :type max_depth: int
+        :param frameId: The frame for whose document the AX tree should be retrieved.
+If omited, the root frame is used.
+        :type frameId: Page.FrameId
         """
         return (
             cls.build_send_payload("getFullAXTree", {
+                "depth": depth,
                 "max_depth": max_depth,
+                "frameId": frameId,
             }),
             cls.convert_payload({
                 "nodes": {
@@ -200,15 +209,20 @@ If omitted, the full tree is returned.
     @classmethod
     def getChildAXNodes(cls,
                         id: Union['AXNodeId'],
+                        frameId: Optional['Page.FrameId'] = None,
                         ):
         """Fetches a particular accessibility node by AXNodeId.
 Requires `enable()` to have been called previously.
         :param id: 
         :type id: AXNodeId
+        :param frameId: The frame in whose document the node resides.
+If omitted, the root frame is used.
+        :type frameId: Page.FrameId
         """
         return (
             cls.build_send_payload("getChildAXNodes", {
                 "id": id,
+                "frameId": frameId,
             }),
             cls.convert_payload({
                 "nodes": {
