@@ -19,7 +19,7 @@ from chromewhip.protocol import page as Page
 # RequestId: Unique request identifier.
 RequestId = str
 
-# RequestStage: Stages of the request to handle. Request will intercept before the request issent. Response will intercept after the response is received (but before responsebody is received.
+# RequestStage: Stages of the request to handle. Request will intercept before the request issent. Response will intercept after the response is received (but before responsebody is received).
 RequestStage = str
 
 # RequestPattern: 
@@ -148,9 +148,11 @@ expecting a call to continueWithAuth.
         :param binaryResponseHeaders: Alternative way of specifying response headers as a \0-separated
 series of name: value pairs. Prefer the above method unless you
 need to represent some non-UTF8 values that can't be transmitted
-over the protocol as text.
+over the protocol as text. (Encoded as a base64 string when passed over JSON)
         :type binaryResponseHeaders: str
-        :param body: A response body.
+        :param body: A response body. If absent, original response body will be used if
+the request is intercepted at the response stage and empty body
+will be used if the request is intercepted at the request stage. (Encoded as a base64 string when passed over JSON)
         :type body: str
         :param responsePhrase: A textual representation of responseCode.
 If absent, a standard phrase matching responseCode is used.
@@ -175,6 +177,7 @@ If absent, a standard phrase matching responseCode is used.
                         method: Optional['str'] = None,
                         postData: Optional['str'] = None,
                         headers: Optional['[HeaderEntry]'] = None,
+                        interceptResponse: Optional['bool'] = None,
                         ):
         """Continues the request, optionally modifying some of its parameters.
         :param requestId: An id the client received in requestPaused event.
@@ -183,10 +186,12 @@ If absent, a standard phrase matching responseCode is used.
         :type url: str
         :param method: If set, the request method is overridden.
         :type method: str
-        :param postData: If set, overrides the post data in the request.
+        :param postData: If set, overrides the post data in the request. (Encoded as a base64 string when passed over JSON)
         :type postData: str
         :param headers: If set, overrides the request headers.
         :type headers: [HeaderEntry]
+        :param interceptResponse: If set, overrides response interception behavior for this request.
+        :type interceptResponse: bool
         """
         return (
             cls.build_send_payload("continueRequest", {
@@ -195,6 +200,7 @@ If absent, a standard phrase matching responseCode is used.
                 "method": method,
                 "postData": postData,
                 "headers": headers,
+                "interceptResponse": interceptResponse,
             }),
             None
         )
@@ -214,6 +220,43 @@ If absent, a standard phrase matching responseCode is used.
             cls.build_send_payload("continueWithAuth", {
                 "requestId": requestId,
                 "authChallengeResponse": authChallengeResponse,
+            }),
+            None
+        )
+
+    @classmethod
+    def continueResponse(cls,
+                         requestId: Union['RequestId'],
+                         responseCode: Optional['int'] = None,
+                         responsePhrase: Optional['str'] = None,
+                         responseHeaders: Optional['[HeaderEntry]'] = None,
+                         binaryResponseHeaders: Optional['str'] = None,
+                         ):
+        """Continues loading of the paused response, optionally modifying the
+response headers. If either responseCode or headers are modified, all of them
+must be present.
+        :param requestId: An id the client received in requestPaused event.
+        :type requestId: RequestId
+        :param responseCode: An HTTP response code. If absent, original response code will be used.
+        :type responseCode: int
+        :param responsePhrase: A textual representation of responseCode.
+If absent, a standard phrase matching responseCode is used.
+        :type responsePhrase: str
+        :param responseHeaders: Response headers. If absent, original response headers will be used.
+        :type responseHeaders: [HeaderEntry]
+        :param binaryResponseHeaders: Alternative way of specifying response headers as a \0-separated
+series of name: value pairs. Prefer the above method unless you
+need to represent some non-UTF8 values that can't be transmitted
+over the protocol as text. (Encoded as a base64 string when passed over JSON)
+        :type binaryResponseHeaders: str
+        """
+        return (
+            cls.build_send_payload("continueResponse", {
+                "requestId": requestId,
+                "responseCode": responseCode,
+                "responsePhrase": responsePhrase,
+                "responseHeaders": responseHeaders,
+                "binaryResponseHeaders": binaryResponseHeaders,
             }),
             None
         )
@@ -281,7 +324,7 @@ domain before body is received results in an undefined behavior.
 class RequestPausedEvent(BaseEvent):
 
     js_name = 'Fetch.requestPaused'
-    hashable = ['networkId', 'frameId', 'requestId']
+    hashable = ['requestId', 'networkId', 'frameId']
     is_hashable = True
 
     def __init__(self,
@@ -291,6 +334,7 @@ class RequestPausedEvent(BaseEvent):
                  resourceType: Union['Network.ResourceType', dict],
                  responseErrorReason: Union['Network.ErrorReason', dict, None] = None,
                  responseStatusCode: Union['int', dict, None] = None,
+                 responseStatusText: Union['str', dict, None] = None,
                  responseHeaders: Union['[HeaderEntry]', dict, None] = None,
                  networkId: Union['RequestId', dict, None] = None,
                  ):
@@ -312,6 +356,9 @@ class RequestPausedEvent(BaseEvent):
         if isinstance(responseStatusCode, dict):
             responseStatusCode = int(**responseStatusCode)
         self.responseStatusCode = responseStatusCode
+        if isinstance(responseStatusText, dict):
+            responseStatusText = str(**responseStatusText)
+        self.responseStatusText = responseStatusText
         if isinstance(responseHeaders, dict):
             responseHeaders = [HeaderEntry](**responseHeaders)
         self.responseHeaders = responseHeaders
@@ -320,7 +367,7 @@ class RequestPausedEvent(BaseEvent):
         self.networkId = networkId
 
     @classmethod
-    def build_hash(cls, networkId, frameId, requestId):
+    def build_hash(cls, requestId, networkId, frameId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -332,7 +379,7 @@ class RequestPausedEvent(BaseEvent):
 class AuthRequiredEvent(BaseEvent):
 
     js_name = 'Fetch.authRequired'
-    hashable = ['frameId', 'requestId']
+    hashable = ['requestId', 'frameId']
     is_hashable = True
 
     def __init__(self,
@@ -359,7 +406,7 @@ class AuthRequiredEvent(BaseEvent):
         self.authChallenge = authChallenge
 
     @classmethod
-    def build_hash(cls, frameId, requestId):
+    def build_hash(cls, requestId, frameId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

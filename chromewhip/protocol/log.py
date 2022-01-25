@@ -22,6 +22,7 @@ class LogEntry(ChromeTypeBase):
                  level: Union['str'],
                  text: Union['str'],
                  timestamp: Union['Runtime.Timestamp'],
+                 category: Optional['str'] = None,
                  url: Optional['str'] = None,
                  lineNumber: Optional['int'] = None,
                  stackTrace: Optional['Runtime.StackTrace'] = None,
@@ -33,6 +34,7 @@ class LogEntry(ChromeTypeBase):
         self.source = source
         self.level = level
         self.text = text
+        self.category = category
         self.timestamp = timestamp
         self.url = url
         self.lineNumber = lineNumber

@@ -71,9 +71,11 @@ class DragData(ChromeTypeBase):
     def __init__(self,
                  items: Union['[DragDataItem]'],
                  dragOperationsMask: Union['int'],
+                 files: Optional['[]'] = None,
                  ):
 
         self.items = items
+        self.files = files
         self.dragOperationsMask = dragOperationsMask
 
 
@@ -203,6 +205,39 @@ for example an emoji keyboard or an IME.
         return (
             cls.build_send_payload("insertText", {
                 "text": text,
+            }),
+            None
+        )
+
+    @classmethod
+    def imeSetComposition(cls,
+                          text: Union['str'],
+                          selectionStart: Union['int'],
+                          selectionEnd: Union['int'],
+                          replacementStart: Optional['int'] = None,
+                          replacementEnd: Optional['int'] = None,
+                          ):
+        """This method sets the current candidate text for ime.
+Use imeCommitComposition to commit the final text.
+Use imeSetComposition with empty string as text to cancel composition.
+        :param text: The text to insert
+        :type text: str
+        :param selectionStart: selection start
+        :type selectionStart: int
+        :param selectionEnd: selection end
+        :type selectionEnd: int
+        :param replacementStart: replacement start
+        :type replacementStart: int
+        :param replacementEnd: replacement end
+        :type replacementEnd: int
+        """
+        return (
+            cls.build_send_payload("imeSetComposition", {
+                "text": text,
+                "selectionStart": selectionStart,
+                "selectionEnd": selectionEnd,
+                "replacementStart": replacementStart,
+                "replacementEnd": replacementEnd,
             }),
             None
         )

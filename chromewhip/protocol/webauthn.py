@@ -34,6 +34,7 @@ class VirtualAuthenticatorOptions(ChromeTypeBase):
                  hasResidentKey: Optional['bool'] = None,
                  hasUserVerification: Optional['bool'] = None,
                  hasLargeBlob: Optional['bool'] = None,
+                 hasCredBlob: Optional['bool'] = None,
                  automaticPresenceSimulation: Optional['bool'] = None,
                  isUserVerified: Optional['bool'] = None,
                  ):
@@ -44,6 +45,7 @@ class VirtualAuthenticatorOptions(ChromeTypeBase):
         self.hasResidentKey = hasResidentKey
         self.hasUserVerification = hasUserVerification
         self.hasLargeBlob = hasLargeBlob
+        self.hasCredBlob = hasCredBlob
         self.automaticPresenceSimulation = automaticPresenceSimulation
         self.isUserVerified = isUserVerified
 

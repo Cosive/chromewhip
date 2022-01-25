@@ -354,6 +354,8 @@ and crbug.com/991325.
         """Controls whether to automatically attach to new targets which are considered to be related to
 this one. When turned on, attaches to all existing related targets as well. When turned off,
 automatically detaches from all currently attached targets.
+This also clears all targets added by `autoAttachRelated` from the list of targets to watch
+for creation of related targets.
         :param autoAttach: Whether to auto-attach to related targets.
         :type autoAttach: bool
         :param waitForDebuggerOnStart: Whether to pause new targets when attaching to them. Use `Runtime.runIfWaitingForDebugger`
@@ -369,6 +371,30 @@ and eventually retire it. See crbug.com/991325.
                 "autoAttach": autoAttach,
                 "waitForDebuggerOnStart": waitForDebuggerOnStart,
                 "flatten": flatten,
+            }),
+            None
+        )
+
+    @classmethod
+    def autoAttachRelated(cls,
+                          targetId: Union['TargetID'],
+                          waitForDebuggerOnStart: Union['bool'],
+                          ):
+        """Adds the specified target to the list of targets that will be monitored for any related target
+creation (such as child frames, child workers and new versions of service worker) and reported
+through `attachedToTarget`. The specified target is also auto-attached.
+This cancels the effect of any previous `setAutoAttach` and is also cancelled by subsequent
+`setAutoAttach`. Only available at the Browser target.
+        :param targetId: 
+        :type targetId: TargetID
+        :param waitForDebuggerOnStart: Whether to pause new targets when attaching to them. Use `Runtime.runIfWaitingForDebugger`
+to run paused targets.
+        :type waitForDebuggerOnStart: bool
+        """
+        return (
+            cls.build_send_payload("autoAttachRelated", {
+                "targetId": targetId,
+                "waitForDebuggerOnStart": waitForDebuggerOnStart,
             }),
             None
         )
@@ -441,7 +467,7 @@ class AttachedToTargetEvent(BaseEvent):
 class DetachedFromTargetEvent(BaseEvent):
 
     js_name = 'Target.detachedFromTarget'
-    hashable = ['targetId', 'sessionId']
+    hashable = ['sessionId', 'targetId']
     is_hashable = True
 
     def __init__(self,
@@ -456,7 +482,7 @@ class DetachedFromTargetEvent(BaseEvent):
         self.targetId = targetId
 
     @classmethod
-    def build_hash(cls, targetId, sessionId):
+    def build_hash(cls, sessionId, targetId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -468,7 +494,7 @@ class DetachedFromTargetEvent(BaseEvent):
 class ReceivedMessageFromTargetEvent(BaseEvent):
 
     js_name = 'Target.receivedMessageFromTarget'
-    hashable = ['targetId', 'sessionId']
+    hashable = ['sessionId', 'targetId']
     is_hashable = True
 
     def __init__(self,
@@ -487,7 +513,7 @@ class ReceivedMessageFromTargetEvent(BaseEvent):
         self.targetId = targetId
 
     @classmethod
-    def build_hash(cls, targetId, sessionId):
+    def build_hash(cls, sessionId, targetId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
