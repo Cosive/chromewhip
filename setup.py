@@ -7,12 +7,14 @@ here = path.abspath(path.dirname(__file__))
 
 chdir(here)
 
+
 def readme():
     try:
         with open(path.join(here, 'README.md'), encoding='utf-8') as f:
             return f.read()
     except FileNotFoundError:
         return ""
+
 
 setup(
     name='chromewhip',
@@ -21,13 +23,16 @@ setup(
 
     description='asyncio driver + HTTP server for Chrome devtools protocol',
     long_description=readme(),
+    # This project was originally forked from https://github.com/chuckus/chromewhip, but the version included here
+    # has been developed subsequently by Cosive, while the original version doesn't appear to have been maintained in
+    # some time.
     # The project's main homepage.
-    url='https://github.com/chuckus/chromewhip',
-    download_url='https://github.com/chuckus/chromewhip/archive/v0.3.4.tar.gz',
+    url='https://github.com/Cosive/chromewhip',
+    download_url='https://github.com/Cosive/chromewhip/archive/refs/tags/chrome-93.0.4577.63.tar.gz',
 
     # Author details
-    author='Charlie Smith',
-    author_email='charlie@chuckus.nz',
+    author='Cosive',
+    author_email='info@cosive.com',
 
     # Choose your license
     license='MIT',
@@ -41,8 +46,8 @@ setup(
 
         'License :: OSI Approved :: MIT License',
 
-        'Programming Language :: Python :: 3.7',
-    ],
+        'Programming Language :: Python :: 3.8',
+        ],
 
     # What does your project relate to?
     keywords='scraping chrome scraper browser automation',
@@ -60,9 +65,9 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'aiohttp==3.7.4', 'websockets==9.1', 'beautifulsoup4==4.7.1', 'lxml==4.6.3',
+        'aiohttp==3.7.4', 'websockets==9.1', 'beautifulsoup4==4.7.1', 'lxml==4.7.1',
         'pyyaml==5.4'
-    ],
+        ],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -71,7 +76,7 @@ setup(
     extras_require={
         'dev': ['Jinja2==2.11.3', 'jsonpatch==1.23'],
         'test': ['pytest-asyncio==0.10.0'],
-    },
+        },
 
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
@@ -79,6 +84,6 @@ setup(
     entry_points={
         'console_scripts': [
             'chromewhip=chromewhip:main',
-        ],
-    },
-)
+            ],
+        },
+    )
