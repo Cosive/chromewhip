@@ -2,20 +2,19 @@
 
 rm -rf devtools-protocol
 git clone --depth=1 https://github.com/ChromeDevTools/devtools-protocol.git
-cd devtools-protocol
+cd devtools-protocol || exit
 LATEST_GIT_MSG=$(git log --oneline --no-color)
 CHROMEWHIP_GIT_MSG=$(cat ../../data/devtools_protocol_msg)
-echo $LATEST_GIT_MSG
-echo $CHROMEWHIP_GIT_MSG
+echo "$LATEST_GIT_MSG"
+echo "$CHROMEWHIP_GIT_MSG"
 if [ "$LATEST_GIT_MSG" != "$CHROMEWHIP_GIT_MSG" ]
 then
   echo "devtools-protocol has been updated. Regenerating chromewhip protocol files."
   cd ../..
-  jsonpatch --indent 4 scripts/devtools-protocol/json/browser_protocol.json data/browser_protocol_patch.json > data/browser_protocol.json
-  jsonpatch --indent 4 scripts/devtools-protocol/json/js_protocol.json data/js_protocol_patch.json > data/js_protocol.json
-  rm -rf scripts/devtools-protocol
+  jsonpatch --indent 4 scripts/devtools-protocol/json/browser_protocol.json data/browser_protocol_patch.json > data/browser_protocol.json || exit
+  jsonpatch --indent 4 scripts/devtools-protocol/json/js_protocol.json data/js_protocol_patch.json > data/js_protocol.json || exit
   echo "$LATEST_GIT_MSG" > data/devtools_protocol_msg
-  cd scripts
+  cd scripts || exit
   if $(python generate_protocol.py); then
     echo "Regeneration complete!"
   else
@@ -35,5 +34,6 @@ then
   # git push https://$CHROMEWHIP_BOT_USERNAME:$CHROMEWHIP_BOT_PASSWORD@github.com/chuckus/chromewhip.git
 else
   echo "no changes found!"
-  rm -rf scripts/devtools-protocol
 fi
+rm -rf scripts/devtools-protocol
+
