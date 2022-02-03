@@ -134,30 +134,6 @@ class ScriptTypeProfile(ChromeTypeBase):
         self.entries = entries
 
 
-# CounterInfo: Collected counter information.
-class CounterInfo(ChromeTypeBase):
-    def __init__(self,
-                 name: Union['str'],
-                 value: Union['int'],
-                 ):
-
-        self.name = name
-        self.value = value
-
-
-# RuntimeCallCounterInfo: Runtime call counter information.
-class RuntimeCallCounterInfo(ChromeTypeBase):
-    def __init__(self,
-                 name: Union['str'],
-                 value: Union['float'],
-                 time: Union['float'],
-                 ):
-
-        self.name = name
-        self.value = value
-        self.time = time
-
-
 class Profiler(PayloadMixin):
     """ 
     """
@@ -333,76 +309,6 @@ coverage needs to have started.
             })
         )
 
-    @classmethod
-    def enableCounters(cls):
-        """Enable counters collection.
-        """
-        return (
-            cls.build_send_payload("enableCounters", {
-            }),
-            None
-        )
-
-    @classmethod
-    def disableCounters(cls):
-        """Disable counters collection.
-        """
-        return (
-            cls.build_send_payload("disableCounters", {
-            }),
-            None
-        )
-
-    @classmethod
-    def getCounters(cls):
-        """Retrieve counters.
-        """
-        return (
-            cls.build_send_payload("getCounters", {
-            }),
-            cls.convert_payload({
-                "result": {
-                    "class": [CounterInfo],
-                    "optional": False
-                },
-            })
-        )
-
-    @classmethod
-    def enableRuntimeCallStats(cls):
-        """Enable run time call stats collection.
-        """
-        return (
-            cls.build_send_payload("enableRuntimeCallStats", {
-            }),
-            None
-        )
-
-    @classmethod
-    def disableRuntimeCallStats(cls):
-        """Disable run time call stats collection.
-        """
-        return (
-            cls.build_send_payload("disableRuntimeCallStats", {
-            }),
-            None
-        )
-
-    @classmethod
-    def getRuntimeCallStats(cls):
-        """Retrieve run time call stats.
-        """
-        return (
-            cls.build_send_payload("getRuntimeCallStats", {
-            }),
-            cls.convert_payload({
-                "result": {
-                    "class": [RuntimeCallCounterInfo],
-                    "optional": False
-                },
-            })
-        )
-
 
 
 class ConsoleProfileFinishedEvent(BaseEvent):
@@ -479,15 +385,15 @@ class PreciseCoverageDeltaUpdateEvent(BaseEvent):
 
     def __init__(self,
                  timestamp: Union['float', dict],
-                 occassion: Union['str', dict],
+                 occasion: Union['str', dict],
                  result: Union['[ScriptCoverage]', dict],
                  ):
         if isinstance(timestamp, dict):
             timestamp = float(**timestamp)
         self.timestamp = timestamp
-        if isinstance(occassion, dict):
-            occassion = str(**occassion)
-        self.occassion = occassion
+        if isinstance(occasion, dict):
+            occasion = str(**occasion)
+        self.occasion = occasion
         if isinstance(result, dict):
             result = [ScriptCoverage](**result)
         self.result = result

@@ -155,7 +155,7 @@ transfer mode (defaults to `none`)
         :type traceConfig: TraceConfig
         :param perfettoConfig: Base64-encoded serialized perfetto.protos.TraceConfig protobuf message
 When specified, the parameters `categories`, `options`, `traceConfig`
-are ignored. (Encoded as a base64 string when passed over JSON)
+are ignored.
         :type perfettoConfig: str
         :param tracingBackend: Backend type (defaults to `auto`)
         :type tracingBackend: TracingBackend

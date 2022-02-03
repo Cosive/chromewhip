@@ -321,6 +321,20 @@ class WasmCrossOriginModuleSharingIssueDetails(ChromeTypeBase):
         self.isWarning = isWarning
 
 
+# GenericIssueErrorType: 
+GenericIssueErrorType = str
+
+# GenericIssueDetails: Depending on the concrete errorType, different properties are set.
+class GenericIssueDetails(ChromeTypeBase):
+    def __init__(self,
+                 errorType: Union['GenericIssueErrorType'],
+                 frameId: Optional['Page.FrameId'] = None,
+                 ):
+
+        self.errorType = errorType
+        self.frameId = frameId
+
+
 # InspectorIssueCode: A unique identifier for the type of issue. Each type may use one of theoptional fields in InspectorIssueDetails to convey more specificinformation about the kind of issue.
 InspectorIssueCode = str
 
@@ -340,6 +354,7 @@ class InspectorIssueDetails(ChromeTypeBase):
                  quirksModeIssueDetails: Optional['QuirksModeIssueDetails'] = None,
                  navigatorUserAgentIssueDetails: Optional['NavigatorUserAgentIssueDetails'] = None,
                  wasmCrossOriginModuleSharingIssue: Optional['WasmCrossOriginModuleSharingIssueDetails'] = None,
+                 genericIssueDetails: Optional['GenericIssueDetails'] = None,
                  ):
 
         self.sameSiteCookieIssueDetails = sameSiteCookieIssueDetails
@@ -355,6 +370,7 @@ class InspectorIssueDetails(ChromeTypeBase):
         self.quirksModeIssueDetails = quirksModeIssueDetails
         self.navigatorUserAgentIssueDetails = navigatorUserAgentIssueDetails
         self.wasmCrossOriginModuleSharingIssue = wasmCrossOriginModuleSharingIssue
+        self.genericIssueDetails = genericIssueDetails
 
 
 # IssueId: A unique id for a DevTools inspector issue. Allows other entities (e.g.exceptions, CDP message, console messages, etc.) to reference an issue.

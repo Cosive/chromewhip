@@ -835,7 +835,7 @@ marked with `isNavigationRequest` also cancels the navigation. Must not be set i
 to an authChallenge.
         :type errorReason: ErrorReason
         :param rawResponse: If set the requests completes using with the provided base64 encoded raw response, including
-HTTP status line and headers etc... Must not be set in response to an authChallenge. (Encoded as a base64 string when passed over JSON)
+HTTP status line and headers etc... Must not be set in response to an authChallenge.
         :type rawResponse: str
         :param url: If set the request url will be modified in a way that's not observable by page. Must not be
 set in response to an authChallenge.
@@ -1587,7 +1587,7 @@ class LoadingFinishedEvent(BaseEvent):
 class RequestInterceptedEvent(BaseEvent):
 
     js_name = 'Network.requestIntercepted'
-    hashable = ['interceptionId', 'requestId', 'frameId']
+    hashable = ['frameId', 'interceptionId', 'requestId']
     is_hashable = True
 
     def __init__(self,
@@ -1642,7 +1642,7 @@ class RequestInterceptedEvent(BaseEvent):
         self.requestId = requestId
 
     @classmethod
-    def build_hash(cls, interceptionId, requestId, frameId):
+    def build_hash(cls, frameId, interceptionId, requestId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -1677,7 +1677,7 @@ class RequestServedFromCacheEvent(BaseEvent):
 class RequestWillBeSentEvent(BaseEvent):
 
     js_name = 'Network.requestWillBeSent'
-    hashable = ['loaderId', 'requestId', 'frameId']
+    hashable = ['frameId', 'requestId', 'loaderId']
     is_hashable = True
 
     def __init__(self,
@@ -1728,7 +1728,7 @@ class RequestWillBeSentEvent(BaseEvent):
         self.hasUserGesture = hasUserGesture
 
     @classmethod
-    def build_hash(cls, loaderId, requestId, frameId):
+    def build_hash(cls, frameId, requestId, loaderId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -1798,7 +1798,7 @@ class SignedExchangeReceivedEvent(BaseEvent):
 class ResponseReceivedEvent(BaseEvent):
 
     js_name = 'Network.responseReceived'
-    hashable = ['loaderId', 'requestId', 'frameId']
+    hashable = ['frameId', 'requestId', 'loaderId']
     is_hashable = True
 
     def __init__(self,
@@ -1829,7 +1829,7 @@ class ResponseReceivedEvent(BaseEvent):
         self.frameId = frameId
 
     @classmethod
-    def build_hash(cls, loaderId, requestId, frameId):
+    def build_hash(cls, frameId, requestId, loaderId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -2326,7 +2326,7 @@ class SubresourceWebBundleMetadataErrorEvent(BaseEvent):
 class SubresourceWebBundleInnerResponseParsedEvent(BaseEvent):
 
     js_name = 'Network.subresourceWebBundleInnerResponseParsed'
-    hashable = ['innerRequestId', 'bundleRequestId']
+    hashable = ['bundleRequestId', 'innerRequestId']
     is_hashable = True
 
     def __init__(self,
@@ -2345,7 +2345,7 @@ class SubresourceWebBundleInnerResponseParsedEvent(BaseEvent):
         self.bundleRequestId = bundleRequestId
 
     @classmethod
-    def build_hash(cls, innerRequestId, bundleRequestId):
+    def build_hash(cls, bundleRequestId, innerRequestId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -2357,7 +2357,7 @@ class SubresourceWebBundleInnerResponseParsedEvent(BaseEvent):
 class SubresourceWebBundleInnerResponseErrorEvent(BaseEvent):
 
     js_name = 'Network.subresourceWebBundleInnerResponseError'
-    hashable = ['innerRequestId', 'bundleRequestId']
+    hashable = ['bundleRequestId', 'innerRequestId']
     is_hashable = True
 
     def __init__(self,
@@ -2380,7 +2380,7 @@ class SubresourceWebBundleInnerResponseErrorEvent(BaseEvent):
         self.bundleRequestId = bundleRequestId
 
     @classmethod
-    def build_hash(cls, innerRequestId, bundleRequestId):
+    def build_hash(cls, bundleRequestId, innerRequestId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
