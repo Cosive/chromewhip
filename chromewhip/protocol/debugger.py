@@ -177,7 +177,7 @@ breakpoints, stepping through execution, exploring stack traces, etc.
         """Enables debugger for the given page. Clients should not assume that the debugging has been
 enabled until the result for this command is received.
         :param maxScriptsCacheSize: The maximum size in bytes of collected scripts (not referenced by other heap objects)
-the debugger can hold. Puts no limit if paramter is omitted.
+the debugger can hold. Puts no limit if parameter is omitted.
         :type maxScriptsCacheSize: float
         """
         return (
@@ -856,11 +856,11 @@ class BreakpointResolvedEvent(BaseEvent):
 class PausedEvent(BaseEvent):
 
     js_name = 'Debugger.paused'
-    hashable = ['asyncStackTraceId', 'asyncCallStackTraceId']
+    hashable = ['asyncCallStackTraceId', 'asyncStackTraceId']
     is_hashable = True
 
     def __init__(self,
-                 callFrames: Union['[CallFrame]', dict],
+                 callFrames: Union['CallFrame', dict],
                  reason: Union['str', dict],
                  data: Union['dict', dict, None] = None,
                  hitBreakpoints: Union['[]', dict, None] = None,
@@ -869,7 +869,7 @@ class PausedEvent(BaseEvent):
                  asyncCallStackTraceId: Union['Runtime.StackTraceId', dict, None] = None,
                  ):
         if isinstance(callFrames, dict):
-            callFrames = [CallFrame](**callFrames)
+            callFrames = CallFrame(**callFrames)
         self.callFrames = callFrames
         if isinstance(reason, dict):
             reason = str(**reason)
@@ -891,7 +891,7 @@ class PausedEvent(BaseEvent):
         self.asyncCallStackTraceId = asyncCallStackTraceId
 
     @classmethod
-    def build_hash(cls, asyncStackTraceId, asyncCallStackTraceId):
+    def build_hash(cls, asyncCallStackTraceId, asyncStackTraceId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -917,7 +917,7 @@ class ResumedEvent(BaseEvent):
 class ScriptFailedToParseEvent(BaseEvent):
 
     js_name = 'Debugger.scriptFailedToParse'
-    hashable = ['scriptId', 'executionContextId']
+    hashable = ['executionContextId', 'scriptId']
     is_hashable = True
 
     def __init__(self,
@@ -992,7 +992,7 @@ class ScriptFailedToParseEvent(BaseEvent):
         self.embedderName = embedderName
 
     @classmethod
-    def build_hash(cls, scriptId, executionContextId):
+    def build_hash(cls, executionContextId, scriptId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -1004,7 +1004,7 @@ class ScriptFailedToParseEvent(BaseEvent):
 class ScriptParsedEvent(BaseEvent):
 
     js_name = 'Debugger.scriptParsed'
-    hashable = ['scriptId', 'executionContextId']
+    hashable = ['executionContextId', 'scriptId']
     is_hashable = True
 
     def __init__(self,
@@ -1087,7 +1087,7 @@ class ScriptParsedEvent(BaseEvent):
         self.embedderName = embedderName
 
     @classmethod
-    def build_hash(cls, scriptId, executionContextId):
+    def build_hash(cls, executionContextId, scriptId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

@@ -712,12 +712,17 @@ option, use with caution.
     @classmethod
     def getAppId(cls):
         """Returns the unique (PWA) app id.
+Only returns values if the feature flag 'WebAppEnableManifestId' is enabled
         """
         return (
             cls.build_send_payload("getAppId", {
             }),
             cls.convert_payload({
                 "appId": {
+                    "class": str,
+                    "optional": True
+                },
+                "recommendedId": {
                     "class": str,
                     "optional": True
                 },
@@ -1555,7 +1560,7 @@ See also: `Page.compilationCacheProduced`.
 cross-process navigation.
         :param url: 
         :type url: str
-        :param data: Base64-encoded data (Encoded as a base64 string when passed over JSON)
+        :param data: Base64-encoded data
         :type data: str
         """
         return (
@@ -1645,7 +1650,7 @@ class DomContentEventFiredEvent(BaseEvent):
 class FileChooserOpenedEvent(BaseEvent):
 
     js_name = 'Page.fileChooserOpened'
-    hashable = ['backendNodeId', 'frameId']
+    hashable = ['frameId', 'backendNodeId']
     is_hashable = True
 
     def __init__(self,
@@ -1664,7 +1669,7 @@ class FileChooserOpenedEvent(BaseEvent):
         self.mode = mode
 
     @classmethod
-    def build_hash(cls, backendNodeId, frameId):
+    def build_hash(cls, frameId, backendNodeId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -1937,7 +1942,7 @@ class FrameStoppedLoadingEvent(BaseEvent):
 class DownloadWillBeginEvent(BaseEvent):
 
     js_name = 'Page.downloadWillBegin'
-    hashable = ['guid', 'frameId']
+    hashable = ['frameId', 'guid']
     is_hashable = True
 
     def __init__(self,
@@ -1960,7 +1965,7 @@ class DownloadWillBeginEvent(BaseEvent):
         self.suggestedFilename = suggestedFilename
 
     @classmethod
-    def build_hash(cls, guid, frameId):
+    def build_hash(cls, frameId, guid):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -2091,7 +2096,7 @@ class JavascriptDialogOpeningEvent(BaseEvent):
 class LifecycleEventEvent(BaseEvent):
 
     js_name = 'Page.lifecycleEvent'
-    hashable = ['loaderId', 'frameId']
+    hashable = ['frameId', 'loaderId']
     is_hashable = True
 
     def __init__(self,
@@ -2114,7 +2119,7 @@ class LifecycleEventEvent(BaseEvent):
         self.timestamp = timestamp
 
     @classmethod
-    def build_hash(cls, loaderId, frameId):
+    def build_hash(cls, frameId, loaderId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -2126,13 +2131,13 @@ class LifecycleEventEvent(BaseEvent):
 class BackForwardCacheNotUsedEvent(BaseEvent):
 
     js_name = 'Page.backForwardCacheNotUsed'
-    hashable = ['loaderId', 'frameId']
+    hashable = ['frameId', 'loaderId']
     is_hashable = True
 
     def __init__(self,
                  loaderId: Union['Network.LoaderId', dict],
                  frameId: Union['FrameId', dict],
-                 notRestoredExplanations: Union['[BackForwardCacheNotRestoredExplanation]', dict],
+                 notRestoredExplanations: Union['BackForwardCacheNotRestoredExplanation', dict],
                  ):
         if isinstance(loaderId, dict):
             loaderId = Network.LoaderId(**loaderId)
@@ -2141,11 +2146,11 @@ class BackForwardCacheNotUsedEvent(BaseEvent):
             frameId = FrameId(**frameId)
         self.frameId = frameId
         if isinstance(notRestoredExplanations, dict):
-            notRestoredExplanations = [BackForwardCacheNotRestoredExplanation](**notRestoredExplanations)
+            notRestoredExplanations = BackForwardCacheNotRestoredExplanation(**notRestoredExplanations)
         self.notRestoredExplanations = notRestoredExplanations
 
     @classmethod
-    def build_hash(cls, loaderId, frameId):
+    def build_hash(cls, frameId, loaderId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

@@ -203,6 +203,7 @@ class ExceptionDetails(ChromeTypeBase):
                  stackTrace: Optional['StackTrace'] = None,
                  exception: Optional['RemoteObject'] = None,
                  executionContextId: Optional['ExecutionContextId'] = None,
+                 exceptionMetaData: Optional['dict'] = None,
                  ):
 
         self.exceptionId = exceptionId
@@ -214,6 +215,7 @@ class ExceptionDetails(ChromeTypeBase):
         self.stackTrace = stackTrace
         self.exception = exception
         self.executionContextId = executionContextId
+        self.exceptionMetaData = exceptionMetaData
 
 
 # Timestamp: Number of milliseconds since epoch.
@@ -319,6 +321,7 @@ other objects in their object group.
                        awaitPromise: Optional['bool'] = None,
                        executionContextId: Optional['ExecutionContextId'] = None,
                        objectGroup: Optional['str'] = None,
+                       throwOnSideEffect: Optional['bool'] = None,
                        ):
         """Calls function with given declaration on the given object. Object group of the result is
 inherited from the target object.
@@ -348,6 +351,8 @@ executionContextId or objectId should be specified.
         :param objectGroup: Symbolic group name that can be used to release multiple objects. If objectGroup is not
 specified and objectId is, objectGroup will be inherited from object.
         :type objectGroup: str
+        :param throwOnSideEffect: Whether to throw an exception if side effect cannot be ruled out during evaluation.
+        :type throwOnSideEffect: bool
         """
         return (
             cls.build_send_payload("callFunctionOn", {
@@ -361,6 +366,7 @@ specified and objectId is, objectGroup will be inherited from object.
                 "awaitPromise": awaitPromise,
                 "executionContextId": executionContextId,
                 "objectGroup": objectGroup,
+                "throwOnSideEffect": throwOnSideEffect,
             }),
             cls.convert_payload({
                 "result": {
@@ -503,9 +509,9 @@ when called with non-callable arguments. This flag bypasses CSP for this
 evaluation and allows unsafe-eval. Defaults to true.
         :type allowUnsafeEvalBlockedByCSP: bool
         :param uniqueContextId: An alternative way to specify the execution context to evaluate in.
-Compared to contextId that may be reused accross processes, this is guaranteed to be
+Compared to contextId that may be reused across processes, this is guaranteed to be
 system-unique, so it can be used to prevent accidental evaluation of the expression
-in context different than intended (e.g. as a result of navigation accross process
+in context different than intended (e.g. as a result of navigation across process
 boundaries).
 This is mutually exclusive with `contextId`.
         :type uniqueContextId: str
@@ -581,6 +587,7 @@ It is the total usage of the corresponding isolate not scoped to a particular Ru
                       ownProperties: Optional['bool'] = None,
                       accessorPropertiesOnly: Optional['bool'] = None,
                       generatePreview: Optional['bool'] = None,
+                      nonIndexedPropertiesOnly: Optional['bool'] = None,
                       ):
         """Returns properties of a given object. Object group of the result is inherited from the target
 object.
@@ -594,6 +601,8 @@ returned either.
         :type accessorPropertiesOnly: bool
         :param generatePreview: Whether preview should be generated for the results.
         :type generatePreview: bool
+        :param nonIndexedPropertiesOnly: If true, returns non-indexed properties only.
+        :type nonIndexedPropertiesOnly: bool
         """
         return (
             cls.build_send_payload("getProperties", {
@@ -601,6 +610,7 @@ returned either.
                 "ownProperties": ownProperties,
                 "accessorPropertiesOnly": accessorPropertiesOnly,
                 "generatePreview": generatePreview,
+                "nonIndexedPropertiesOnly": nonIndexedPropertiesOnly,
             }),
             cls.convert_payload({
                 "result": {
@@ -836,6 +846,9 @@ Each binding function call produces Runtime.bindingCalled notification.
 execution context. If omitted and `executionContextName` is not set,
 the binding is exposed to all execution contexts of the target.
 This parameter is mutually exclusive with `executionContextName`.
+Deprecated in favor of `executionContextName` due to an unclear use case
+and bugs in implementation (crbug.com/1169639). `executionContextId` will be
+removed in the future.
         :type executionContextId: ExecutionContextId
         :param executionContextName: If specified, the binding is exposed to the executionContext with
 matching name, even for contexts created after the binding is added.
@@ -1057,12 +1070,13 @@ class ExecutionContextsClearedEvent(BaseEvent):
 class InspectRequestedEvent(BaseEvent):
 
     js_name = 'Runtime.inspectRequested'
-    hashable = []
-    is_hashable = False
+    hashable = ['executionContextId']
+    is_hashable = True
 
     def __init__(self,
                  object: Union['RemoteObject', dict],
                  hints: Union['dict', dict],
+                 executionContextId: Union['ExecutionContextId', dict, None] = None,
                  ):
         if isinstance(object, dict):
             object = RemoteObject(**object)
@@ -1070,7 +1084,15 @@ class InspectRequestedEvent(BaseEvent):
         if isinstance(hints, dict):
             hints = dict(**hints)
         self.hints = hints
+        if isinstance(executionContextId, dict):
+            executionContextId = ExecutionContextId(**executionContextId)
+        self.executionContextId = executionContextId
 
     @classmethod
-    def build_hash(cls):
-        raise ValueError('Unable to build hash for non-hashable type')
+    def build_hash(cls, executionContextId):
+        kwargs = locals()
+        kwargs.pop('cls')
+        serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
+        h = '{}:{}'.format(cls.js_name, serialized_id_params)
+        log.debug('generated hash = %s' % h)
+        return h

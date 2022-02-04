@@ -2,7 +2,6 @@ import sys
 sys.path.insert(0, "../")
 import chromewhip.protocol.accessibility
 import chromewhip.protocol.animation
-import chromewhip.protocol.applicationcache
 import chromewhip.protocol.audits
 import chromewhip.protocol.backgroundservice
 import chromewhip.protocol.browser

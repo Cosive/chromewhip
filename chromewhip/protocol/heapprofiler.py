@@ -214,6 +214,7 @@ default value is 32768 bytes.
     def stopTrackingHeapObjects(cls,
                                 reportProgress: Optional['bool'] = None,
                                 treatGlobalObjectsAsRoots: Optional['bool'] = None,
+                                captureNumericValue: Optional['bool'] = None,
                                 ):
         """
         :param reportProgress: If true 'reportHeapSnapshotProgress' events will be generated while snapshot is being taken
@@ -221,11 +222,14 @@ when the tracking is stopped.
         :type reportProgress: bool
         :param treatGlobalObjectsAsRoots: 
         :type treatGlobalObjectsAsRoots: bool
+        :param captureNumericValue: If true, numerical values are included in the snapshot
+        :type captureNumericValue: bool
         """
         return (
             cls.build_send_payload("stopTrackingHeapObjects", {
                 "reportProgress": reportProgress,
                 "treatGlobalObjectsAsRoots": treatGlobalObjectsAsRoots,
+                "captureNumericValue": captureNumericValue,
             }),
             None
         )
@@ -234,17 +238,21 @@ when the tracking is stopped.
     def takeHeapSnapshot(cls,
                          reportProgress: Optional['bool'] = None,
                          treatGlobalObjectsAsRoots: Optional['bool'] = None,
+                         captureNumericValue: Optional['bool'] = None,
                          ):
         """
         :param reportProgress: If true 'reportHeapSnapshotProgress' events will be generated while snapshot is being taken.
         :type reportProgress: bool
-        :param treatGlobalObjectsAsRoots: If true, a raw snapshot without artifical roots will be generated
+        :param treatGlobalObjectsAsRoots: If true, a raw snapshot without artificial roots will be generated
         :type treatGlobalObjectsAsRoots: bool
+        :param captureNumericValue: If true, numerical values are included in the snapshot
+        :type captureNumericValue: bool
         """
         return (
             cls.build_send_payload("takeHeapSnapshot", {
                 "reportProgress": reportProgress,
                 "treatGlobalObjectsAsRoots": treatGlobalObjectsAsRoots,
+                "captureNumericValue": captureNumericValue,
             }),
             None
         )

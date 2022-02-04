@@ -266,6 +266,30 @@ class ContainerQueryContainerHighlightConfig(ChromeTypeBase):
         self.descendantBorder = descendantBorder
 
 
+# IsolatedElementHighlightConfig: 
+class IsolatedElementHighlightConfig(ChromeTypeBase):
+    def __init__(self,
+                 isolationModeHighlightConfig: Union['IsolationModeHighlightConfig'],
+                 nodeId: Union['DOM.NodeId'],
+                 ):
+
+        self.isolationModeHighlightConfig = isolationModeHighlightConfig
+        self.nodeId = nodeId
+
+
+# IsolationModeHighlightConfig: 
+class IsolationModeHighlightConfig(ChromeTypeBase):
+    def __init__(self,
+                 resizerColor: Optional['DOM.RGBA'] = None,
+                 resizerHandleColor: Optional['DOM.RGBA'] = None,
+                 maskColor: Optional['DOM.RGBA'] = None,
+                 ):
+
+        self.resizerColor = resizerColor
+        self.resizerHandleColor = resizerHandleColor
+        self.maskColor = maskColor
+
+
 # InspectMode: 
 InspectMode = str
 
@@ -764,6 +788,21 @@ Backend then generates 'inspectNodeRequested' event upon element selection.
         return (
             cls.build_send_payload("setShowHinge", {
                 "hingeConfig": hingeConfig,
+            }),
+            None
+        )
+
+    @classmethod
+    def setShowIsolatedElements(cls,
+                                isolatedElementHighlightConfigs: Union['[IsolatedElementHighlightConfig]'],
+                                ):
+        """Show elements in isolation mode with overlays.
+        :param isolatedElementHighlightConfigs: An array of node identifiers and descriptors for the highlight appearance.
+        :type isolatedElementHighlightConfigs: [IsolatedElementHighlightConfig]
+        """
+        return (
+            cls.build_send_payload("setShowIsolatedElements", {
+                "isolatedElementHighlightConfigs": isolatedElementHighlightConfigs,
             }),
             None
         )

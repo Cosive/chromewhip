@@ -148,11 +148,11 @@ expecting a call to continueWithAuth.
         :param binaryResponseHeaders: Alternative way of specifying response headers as a \0-separated
 series of name: value pairs. Prefer the above method unless you
 need to represent some non-UTF8 values that can't be transmitted
-over the protocol as text. (Encoded as a base64 string when passed over JSON)
+over the protocol as text.
         :type binaryResponseHeaders: str
         :param body: A response body. If absent, original response body will be used if
 the request is intercepted at the response stage and empty body
-will be used if the request is intercepted at the request stage. (Encoded as a base64 string when passed over JSON)
+will be used if the request is intercepted at the request stage.
         :type body: str
         :param responsePhrase: A textual representation of responseCode.
 If absent, a standard phrase matching responseCode is used.
@@ -186,7 +186,7 @@ If absent, a standard phrase matching responseCode is used.
         :type url: str
         :param method: If set, the request method is overridden.
         :type method: str
-        :param postData: If set, overrides the post data in the request. (Encoded as a base64 string when passed over JSON)
+        :param postData: If set, overrides the post data in the request.
         :type postData: str
         :param headers: If set, overrides the request headers.
         :type headers: [HeaderEntry]
@@ -247,7 +247,7 @@ If absent, a standard phrase matching responseCode is used.
         :param binaryResponseHeaders: Alternative way of specifying response headers as a \0-separated
 series of name: value pairs. Prefer the above method unless you
 need to represent some non-UTF8 values that can't be transmitted
-over the protocol as text. (Encoded as a base64 string when passed over JSON)
+over the protocol as text.
         :type binaryResponseHeaders: str
         """
         return (
@@ -324,7 +324,7 @@ domain before body is received results in an undefined behavior.
 class RequestPausedEvent(BaseEvent):
 
     js_name = 'Fetch.requestPaused'
-    hashable = ['requestId', 'networkId', 'frameId']
+    hashable = ['frameId', 'requestId', 'networkId']
     is_hashable = True
 
     def __init__(self,
@@ -367,7 +367,7 @@ class RequestPausedEvent(BaseEvent):
         self.networkId = networkId
 
     @classmethod
-    def build_hash(cls, requestId, networkId, frameId):
+    def build_hash(cls, frameId, requestId, networkId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
@@ -379,7 +379,7 @@ class RequestPausedEvent(BaseEvent):
 class AuthRequiredEvent(BaseEvent):
 
     js_name = 'Fetch.authRequired'
-    hashable = ['requestId', 'frameId']
+    hashable = ['frameId', 'requestId']
     is_hashable = True
 
     def __init__(self,
@@ -406,7 +406,7 @@ class AuthRequiredEvent(BaseEvent):
         self.authChallenge = authChallenge
 
     @classmethod
-    def build_hash(cls, requestId, frameId):
+    def build_hash(cls, frameId, requestId):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])

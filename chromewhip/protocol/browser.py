@@ -409,7 +409,7 @@ with 'left', 'top', 'width' or 'height'. Leaves unspecified fields unchanged.
         """Set dock tile details, platform-specific.
         :param badgeLabel: 
         :type badgeLabel: str
-        :param image: Png encoded image. (Encoded as a base64 string when passed over JSON)
+        :param image: Png encoded image.
         :type image: str
         """
         return (
@@ -440,7 +440,7 @@ with 'left', 'top', 'width' or 'height'. Leaves unspecified fields unchanged.
 class DownloadWillBeginEvent(BaseEvent):
 
     js_name = 'Browser.downloadWillBegin'
-    hashable = ['guid', 'frameId']
+    hashable = ['frameId', 'guid']
     is_hashable = True
 
     def __init__(self,
@@ -463,7 +463,7 @@ class DownloadWillBeginEvent(BaseEvent):
         self.suggestedFilename = suggestedFilename
 
     @classmethod
-    def build_hash(cls, guid, frameId):
+    def build_hash(cls, frameId, guid):
         kwargs = locals()
         kwargs.pop('cls')
         serialized_id_params = ','.join(['='.join([p, str(v)]) for p, v in kwargs.items()])
