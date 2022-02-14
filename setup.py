@@ -19,7 +19,7 @@ def readme():
 setup(
     name='chromewhip',
 
-    version='0.3.4',
+    version='0.3.5',
 
     description='asyncio driver + HTTP server for Chrome devtools protocol',
     long_description=readme(),
@@ -28,7 +28,7 @@ setup(
     # some time.
     # The project's main homepage.
     url='https://github.com/Cosive/chromewhip',
-    download_url='https://github.com/Cosive/chromewhip/archive/refs/tags/chrome-93.0.4577.63.tar.gz',
+    download_url='https://github.com/Cosive/chromewhip/archive/refs/tags/chrome-96.0.4664.110.tar.gz',
 
     # Author details
     author='Cosive',
