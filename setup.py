@@ -28,7 +28,7 @@ setup(
     # some time.
     # The project's main homepage.
     url='https://github.com/Cosive/chromewhip',
-    download_url='https://github.com/Cosive/chromewhip/archive/refs/tags/chrome-96.0.4664.110.tar.gz',
+    download_url='https://codeload.github.com/Cosive/chromewhip/tar.gz/refs/heads/master',
 
     # Author details
     author='Cosive',
