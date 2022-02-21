@@ -7,6 +7,7 @@ here = path.abspath(path.dirname(__file__))
 
 chdir(here)
 
+
 def readme():
     try:
         with open(path.join(here, 'README.md'), encoding='utf-8') as f:
@@ -14,20 +15,21 @@ def readme():
     except FileNotFoundError:
         return ""
 
+
 setup(
     name='chromewhip',
 
-    version='0.3.4',
+    version='0.3.5',
 
     description='asyncio driver + HTTP server for Chrome devtools protocol',
     long_description=readme(),
     # The project's main homepage.
-    url='https://github.com/chuckus/chromewhip',
-    download_url='https://github.com/chuckus/chromewhip/archive/v0.3.4.tar.gz',
+    url='https://github.com/Cosive/chromewhip',
+    download_url='https://codeload.github.com/Cosive/chromewhip/tar.gz/refs/heads/master',
 
     # Author details
-    author='Charlie Smith',
-    author_email='charlie@chuckus.nz',
+    author='Cosive',
+    author_email='info@cosive.com',
 
     # Choose your license
     license='MIT',
@@ -41,8 +43,8 @@ setup(
 
         'License :: OSI Approved :: MIT License',
 
-        'Programming Language :: Python :: 3.7',
-    ],
+        'Programming Language :: Python :: 3.8',
+        ],
 
     # What does your project relate to?
     keywords='scraping chrome scraper browser automation',
@@ -60,9 +62,9 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'aiohttp==3.7.4', 'websockets==9.1', 'beautifulsoup4==4.7.1', 'lxml==4.6.3',
+        'aiohttp==3.7.4', 'websockets==9.1', 'beautifulsoup4==4.7.1', 'lxml==4.7.1',
         'pyyaml==5.4'
-    ],
+        ],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -71,7 +73,7 @@ setup(
     extras_require={
         'dev': ['Jinja2==2.11.3', 'jsonpatch==1.23'],
         'test': ['pytest-asyncio==0.10.0'],
-    },
+        },
 
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
@@ -79,6 +81,6 @@ setup(
     entry_points={
         'console_scripts': [
             'chromewhip=chromewhip:main',
-        ],
-    },
-)
+            ],
+        },
+    )

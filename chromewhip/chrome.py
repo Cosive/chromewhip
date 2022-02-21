@@ -1,29 +1,30 @@
 import asyncio
 import base64
+import datetime
 import json
 import logging
-import datetime
 from typing import Optional
 
 import aiohttp
 import websockets
-import websockets.legacy.protocol
 import websockets.exceptions
+import websockets.legacy.protocol
 
 from chromewhip import helpers
 from chromewhip.base import SyncAdder
-from chromewhip.protocol import page, runtime, target, input, inspector, browser, accessibility, network, dom
+from chromewhip.protocol import network, page, runtime
 
 TIMEOUT_S = 25
 MAX_PAYLOAD_SIZE_BYTES = 2 ** 23
 MAX_PAYLOAD_SIZE_MB = MAX_PAYLOAD_SIZE_BYTES / 1024 ** 2
 
 
+# noinspection PyMissingOrEmptyDocstring
 class ChromewhipException(Exception):
     pass
 
 
-class TimeoutError(Exception):
+class ChromeTimeoutError(asyncio.TimeoutError):
     pass
 
 
@@ -37,56 +38,37 @@ class DevToolsTraceEntry(object):
         self.direction = direction
         self.message = message
 
+
 class DevToolsTraceLog(object):
-    TX = 'tx'
-    RX = 'rx'
+    TX_STRING = 'tx'
+    RX_STRING = 'rx'
 
     def __init__(self):
         self._entries = []
 
     def rx(self, message):
-        self._entries.append(DevToolsTraceEntry(DevToolsTraceLog.RX, message))
+        self._entries.append(DevToolsTraceEntry(DevToolsTraceLog.RX_STRING, message))
 
     def tx(self, message):
-        self._entries.append(DevToolsTraceEntry(DevToolsTraceLog.TX, message))
+        self._entries.append(DevToolsTraceEntry(DevToolsTraceLog.TX_STRING, message))
 
     @property
     def entries(self):
         return self._entries
 
-    # def saveHar(self, filestream):
-    #     # page_loads = []
-    #     # requests = []
-    #     # for idx_entry, entry in enumerate(self._entries):
-    #     #     if entry.direction == DevToolsTrace.RX:
-    #     #         # Locate all page load events that completed
-    #     #         if 'method' in entry.message:
-    #     #
-    #     #             if entry.message['method'] == 'Page.frameStartedLoading':
-    #     #                 ''
-    #     #         pass
-    #
-    #     pages = dict()
-    #
-    #     entries = []
-    #
-    #     # TODO populate browser information
-    #     # browser = dict()
-    #
-    #     creator = dict(name='Chromewhip', version='0.1', comment='https://github.com/Cosive/chromewhip')
-    #     har = dict(log=dict(version='1.2', creator=creator, pages=pages, entries=entries))
-
     def dumps(self, **kwargs):
-        return json.dumps([{'id': idx, 'timestamp': e.timestamp.isoformat(), 'direction': e.direction, 'payload': e.message} for idx, e in enumerate(self._entries)], cls=helpers.ChromewhipJSONEncoder, **kwargs)
+        return json.dumps(
+            [{'id': idx, 'timestamp': e.timestamp.isoformat(), 'direction': e.direction, 'payload': e.message} for
+             idx, e in enumerate(self._entries)], cls=helpers.ChromewhipJSONEncoder, **kwargs)
 
     def dump(self, filestream, **kwargs):
-        json.dump([{'id': idx, 'timestamp': e.timestamp.isoformat(), 'direction': e.direction, 'payload': e.message} for idx, e in enumerate(self._entries)], filestream, cls=helpers.ChromewhipJSONEncoder, **kwargs)
+        json.dump([{'id': idx, 'timestamp': e.timestamp.isoformat(), 'direction': e.direction, 'payload': e.message} for
+                   idx, e in enumerate(self._entries)], filestream, cls=helpers.ChromewhipJSONEncoder, **kwargs)
 
 
 class JSScriptError(ChromewhipException):
     pass
 
-import asyncio
 
 class ChromeTab(metaclass=SyncAdder):
 
@@ -123,7 +105,7 @@ class ChromeTab(metaclass=SyncAdder):
             ws_url = 'ws://{}:{}/devtools/page/{}'.format(host,
                                                           port,
                                                           tab_id)
-        t = cls(json_['title'], json_['url'],  ws_url, json_['id'], enable_trace=enable_trace)
+        t = cls(json_['title'], json_['url'], ws_url, json_['id'], enable_trace=enable_trace)
         await t.connect()
         return t
 
@@ -205,6 +187,7 @@ class ChromeTab(metaclass=SyncAdder):
                 type_ = types[k]
             except KeyError:
                 raise KeyError('%s not in expected payload of %s' % (k, types))
+            # noinspection PyTypeHints
             if not isinstance(v, type_):
                 raise ValueError('%s is not expected type %s, instead is %s' % (v, type_, type(v)))
         return result
@@ -227,18 +210,24 @@ class ChromeTab(metaclass=SyncAdder):
 
         timeout = timeout or TIMEOUT_S
 
+        input_event = asyncio.Event()
+        input_event.set()  # Ensure that if nothing more is done with the event nothing blocks forever on it
+
         if input_event_cls:
             if not input_event_cls.is_hashable:
                 raise ValueError('Input event class "%s" as not hashable' % input_event_cls.__name__)
             # we can already register the input event before sending command
-            input_event = asyncio.Event()
+            input_event.clear()
             self._input_events[input_event_cls.js_name] = input_event
 
-        if trigger_event_cls:
-            if not trigger_event_cls.is_hashable:
-                raise ValueError('Trigger event type "%s" as not hashable' % trigger_event_cls.__name__)
+        if trigger_event_cls and not trigger_event_cls.is_hashable:
+            raise ValueError('Trigger event type "%s" as not hashable' % trigger_event_cls.__name__)
 
         result = {'ack': None, 'event': None}
+
+        # The below is done both suppress a warning about a potentially unset variable, but also to make it obvious (
+        # hopefully) if it ever is seen when unset.
+        msg = "Variable msg is unset so far."
 
         try:
             if self._devtools_trace:
@@ -297,10 +286,12 @@ class ChromeTab(metaclass=SyncAdder):
                 try:
                     # TODO: put in a `strict` flag so that we can catch differences between the protocol spec and the
                     # underlying implementation.
-                    cleaned_hash_input_dict = {k: v for k, v in hash_input_dict.items() if k in trigger_event_cls.hashable}
+                    cleaned_hash_input_dict = {k: v for k, v in hash_input_dict.items() if
+                                               k in trigger_event_cls.hashable}
                     hash_ = trigger_event_cls.build_hash(**cleaned_hash_input_dict)
                 except TypeError:
-                    raise TypeError(f'Event "{trigger_event_cls.js_name}" hash cannot be built with "{hash_input_dict}"')
+                    raise TypeError(
+                        f'Event "{trigger_event_cls.js_name}" hash cannot be built with "{hash_input_dict}"')
                 event = self._event_payloads.get(hash_)
                 if not event:
                     self._send_log.debug('Waiting for event with hash "%s"...' % hash_)
@@ -312,21 +303,108 @@ class ChromeTab(metaclass=SyncAdder):
 
             self._send_log.info('Successfully sent command = %s' % msg)
             return result
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError as te:
             method = request['method']
             id_ = request['id']
             self._send_log.error(msg)
+            # noinspection PyUnresolvedReferences
             if self._ws.state != websockets.protocol.State.OPEN:
+                # The websocket closure status codes ('close codes') below were taken from
+                # https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code on 26 January 2022.  See also
+                # https://github.com/Luka967/websocket-close-codes and
+                # https://www.rfc-editor.org/rfc/rfc6455.html#section-7.4.  Code 1004 is skipped, as it is reserved but
+                # currently undefined.
                 close_code = self._ws.close_code
-                if close_code == 1002:
-                    raise ProtocolError('Websocket protocol error occured for "%s" with id=%s' % (method, id_))
+                if close_code == 1000:
+                    raise ProtocolError(
+                        'A websocket for "%s" with id=%s underwent a normal closure (websocket close code %s), '
+                        'but it occurred earlier than anticipated, leading to an unexpected timeout error.' % (
+                            method, id_, close_code))
+                elif close_code == 1001:
+                    raise ProtocolError(
+                        'The relevant websocket for "%s" with id=%s was closed because it is "going away" (websocket '
+                        'close code %s).  This led to an unexpected timeout error.' % (
+                            method, id_, close_code))
+                elif close_code == 1002:
+                    raise ProtocolError(
+                        'A websocket protocol error led to the endpoint terminating the connection (websocket close '
+                        'code %s) for "%s" with id=%s, leading in turn to an unexpected timeout error.' % (
+                            close_code, method, id_))
+                elif close_code == 1003:
+                    raise ProtocolError(
+                        'The remote endpoint terminated the connection for "%s" with id=%s because it received data '
+                        'of a type it cannot accept (websocket close code %s).  This led to an unexpected timeout '
+                        'error.' % (
+                            method, id_, close_code))
+                elif close_code == 1005:
+                    raise ProtocolError(
+                        'The websocket for "%s" with id=%s was closed because no closure status code was received, '
+                        'despite one being expected (websocket close code %s).  This led to an unexpected timeout '
+                        'error.' % (
+                            method, id_, close_code))
                 elif close_code == 1006:
-                    raise ProtocolError('Incomplete read error occured for "%s" with id=%s' % (method, id_))
+                    raise ProtocolError(
+                        'Incomplete read error (websocket close code %s) occurred for "%s" with id=%s.  This led to '
+                        'an unexpected timeout error.' % (
+                            close_code, method, id_))
                 elif close_code == 1007:
-                    raise ProtocolError('Unicode decode error occured for "%s" with id=%s' % (method, id_))
+                    raise ProtocolError(
+                        'Unicode decode error (websocket close code %s) occurred for "%s" with id=%s.  This led to an '
+                        'unexpected timeout error.' % (
+                            close_code, method, id_))
+                elif close_code == 1008:
+                    raise ProtocolError(
+                        'The websocket for "%s" with id=%s was closed by the remote endpoint because of a '
+                        'non-specific policy violation, meaning that it received a message that it considered to have '
+                        'violated its policies (websocket close code %s).  This led to an unexpected timeout error.' % (
+                            method, id_, close_code))
                 elif close_code == 1009:
-                    raise ProtocolError('Recv\'d payload exceeded %sMB for "%s" with id=%s, consider increasing this limit' % (MAX_PAYLOAD_SIZE_MB, method, id_))
-            raise TimeoutError('Unknown cause for timeout to occurs for "%s" with id=%s' % (method, id_))
+                    raise ProtocolError(
+                        'Received payload exceeded %sMB for "%s" with id=%s (websocket close code %s), leading to an '
+                        'unexpected timeout error.  Consider increasing this limit.' % (
+                            MAX_PAYLOAD_SIZE_MB, method, id_, close_code))
+                elif close_code == 1010:
+                    raise ProtocolError(
+                        'The websocket for "%s" with id=%s was closed by the client because the server refused to '
+                        'negotiate an extension (websocket close code %s).  This led to an unexpected timeout error.'
+                        % (
+                            method, id_, close_code))
+                elif close_code == 1011:
+                    raise ProtocolError(
+                        'The websocket for "%s" with id=%s was closed by the server because it experienced an '
+                        'internal error (websocket close code %s).  This led to an unexpected timeout error.' % (
+                            method, id_, close_code))
+                elif close_code == 1012:
+                    raise ProtocolError(
+                        'The websocket for "%s" with id=%s was closed by the server because the server is restarting '
+                        '(websocket close code %s).  This led to an unexpected timeout error.' % (
+                            method, id_, close_code))
+                elif close_code == 1013:
+                    raise ProtocolError(
+                        'The websocket for "%s" with id=%s was closed by the server, with an indication to "try again '
+                        'later" (websocket close code %s).  This led to an unexpected timeout error.' % (
+                            method, id_, close_code))
+                elif close_code == 1014:
+                    raise ProtocolError(
+                        '"Bad Gateway".  The remote endpoint was acting as a gateway or proxy to another device, '
+                        'but received an invalid response from that other device (websocket close code %s).  This led '
+                        'it to close the websocket for "%s" with id=%s, leading in turn to an unexpected timeout '
+                        'error.' % (
+                            close_code, method, id_))
+                elif close_code == 1015:
+                    raise ProtocolError(
+                        'The websocket for "%s" with id=%s was closed because of a failure in the TLS handshake '
+                        'process (websocket close code %s), leading to an unexpected timeout error.' % (
+                            close_code, method, id_))
+                else:
+                    raise ProtocolError(
+                        'The websocket for "%s" with id=%s was unexpectedly closed, but the reason for the closure is '
+                        'not one of the recognised codes from RFC 6455.  Instead, it was %s.  The net result of this '
+                        'was that an unexpected timeout error occurred.  The timeout exception object is: %s.' % (
+                            close_code, method, id_, te))
+            raise ChromeTimeoutError(
+                'Unknown cause for timeout to occur for "%s" with id=%s.  The exception itself was: %s (%s).' % (
+                    method, id_, te, repr(te)))
 
     async def new_message_handler(self, request):
         request['id'] = self._message_id
@@ -357,7 +435,8 @@ class ChromeTab(metaclass=SyncAdder):
         max_retries = 3
         while not finished:
             try:
-                return await self._send(*command, input_event_cls=input_event_type, trigger_event_cls=await_on_event_type, timeout=timeout)
+                return await self._send(*command, input_event_cls=input_event_type,
+                                        trigger_event_cls=await_on_event_type, timeout=timeout)
             except websockets.exceptions.ConnectionClosed:
                 if retries > max_retries:
                     self._log.error(f'Failed to execute send command {command} after {retries} times!')
@@ -388,9 +467,9 @@ class ChromeTab(metaclass=SyncAdder):
         r = result["ack"]["result"]["result"]
         if r.subtype == 'error':
             raise JSScriptError({
-                'reason': 'Runtime.evalulate threw an error',
+                'reason': 'Runtime.evaluate threw an error',
                 'error': result["ack"]["result"]["exceptionDetails"].to_dict()
-            })
+                })
         return result
 
     def __str__(self):
@@ -416,7 +495,7 @@ class Chrome(metaclass=SyncAdder):
         if not self.is_connected:
             try:
                 await asyncio.wait_for(self.attempt_tab_fetch(enable_trace=enable_trace), timeout=5)
-            except TimeoutError:
+            except ChromeTimeoutError:
                 self._log.error('Unable to fetch tabs! Timeout')
 
     async def attempt_tab_fetch(self, enable_trace=False):
@@ -432,7 +511,6 @@ class Chrome(metaclass=SyncAdder):
                 self._tabs = tabs
                 self._log.debug("Connected to Chrome! Found {} tabs".format(len(self._tabs)))
         self.is_connected = True
-
 
     @property
     def host(self):
@@ -464,5 +542,3 @@ class Chrome(metaclass=SyncAdder):
         await tab.disconnect()
         async with aiohttp.ClientSession() as session:
             await session.get(self._url + f'/json/close/{tab.id_}')
-
-
