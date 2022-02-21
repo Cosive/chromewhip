@@ -23,9 +23,6 @@ setup(
 
     description='asyncio driver + HTTP server for Chrome devtools protocol',
     long_description=readme(),
-    # This project was originally forked from https://github.com/chuckus/chromewhip, but the version included here
-    # has been developed subsequently by Cosive, while the original version doesn't appear to have been maintained in
-    # some time.
     # The project's main homepage.
     url='https://github.com/Cosive/chromewhip',
     download_url='https://codeload.github.com/Cosive/chromewhip/tar.gz/refs/heads/master',
