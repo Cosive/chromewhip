@@ -62,7 +62,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'aiohttp==3.7.4', 'websockets==9.1', 'beautifulsoup4==4.7.1', 'lxml==4.9.1',
+        'aiohttp==3.8.3', 'websockets==9.1', 'beautifulsoup4==4.7.1', 'lxml==4.9.1',
         'pyyaml==5.4'
         ],
 
